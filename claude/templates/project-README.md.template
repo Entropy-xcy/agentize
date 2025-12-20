@@ -1,0 +1,96 @@
+# ${PROJECT_NAME}
+
+${PROJ_DESC}
+
+## Features
+
+- [TODO: List key features]
+
+## Quick Start
+
+### Prerequisites
+
+- [TODO: List prerequisites and dependencies]
+
+### Installation
+
+```bash
+# Clone the repository
+git clone <repository-url>
+cd <repository-name>
+
+# Set up environment
+source setup.sh
+
+# Build the project
+make build
+
+# Run tests
+make test
+```
+
+## Usage
+
+[TODO: Add usage examples and documentation]
+
+## Development
+
+### Environment Setup
+
+```bash
+make env-script    # Generate setup.sh
+source setup.sh    # Load environment
+```
+
+### Build
+
+```bash
+make build
+```
+
+### Test
+
+```bash
+make test
+```
+
+### Project Structure
+
+```
+.
+├── src/              # Source code
+├── tests/            # Tests
+├── docs/             # Documentation
+│   └── CLAUDE.md     # Detailed project documentation
+├── .claude/          # AI workflow configuration
+├── Makefile          # Build automation
+├── setup.sh          # Environment setup (generated)
+└── README.md         # This file
+```
+
+## Documentation
+
+- See `docs/CLAUDE.md` for detailed project documentation
+- See `.claude/PROJECT_CONFIG.md` for AI workflow customization
+
+## Contributing
+
+Contributions are welcome! Please:
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Run tests: `make test`
+5. Submit a pull request
+
+## License
+
+[TODO: Add license information]
+
+## Contact
+
+[TODO: Add contact information or links]
+
+---
+
+*This project uses [Agentize](https://github.com/your-org/agentize) for AI-assisted development.*

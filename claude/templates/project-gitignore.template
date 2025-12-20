@@ -1,0 +1,81 @@
+# ============================================================================
+# ${PROJECT_NAME} - .gitignore
+# ============================================================================
+
+# Environment setup script (generated)
+setup.sh
+
+# Build artifacts
+build/
+dist/
+*.o
+*.so
+*.dylib
+*.dll
+*.exe
+*.a
+*.lib
+
+# Dependency directories
+node_modules/
+vendor/
+venv/
+env/
+.venv/
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Compiled Python files
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+
+# Rust
+target/
+Cargo.lock
+
+# C/C++
+*.out
+compile_commands.json
+
+# Java
+*.class
+*.jar
+*.war
+
+# Go
+*.test
+*.prof
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
+
+# Test coverage
+coverage/
+*.coverage
+.nyc_output/
+
+# Package manager locks (uncomment if you want to ignore)
+# package-lock.json
+# yarn.lock
+# Cargo.lock
+
+# OS-specific
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# TODO: Add project-specific ignore patterns

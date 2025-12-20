@@ -1,0 +1,81 @@
+# ============================================================================
+# ${PROJECT_NAME} - Makefile
+# ============================================================================
+
+# Project configuration
+PROJECT_NAME := ${PROJECT_NAME}
+BUILD_DIR := build
+IMPL_DIR := ${IMPL_DIR}
+TEST_DIR := tests
+
+# Language flags (set by install.sh)
+${LANG_FLAGS}
+
+# ============================================================================
+# Standard Targets (Required by Agentize)
+# ============================================================================
+
+.PHONY: help
+help:
+	@echo "=============================="
+	@echo "${PROJECT_NAME}"
+	@echo "=============================="
+	@echo ""
+	@echo "Usage: make [target]"
+	@echo ""
+	@echo "Targets:"
+	@echo "  help        - Show this help message"
+	@echo "  env-script  - Generate environment setup script"
+	@echo "  build       - Build the project"
+	@echo "  test        - Run all tests"
+	@echo "  clean       - Clean build artifacts"
+	@echo "  lint        - Run linters (if available)"
+${HELP_TARGETS}
+	@echo ""
+
+.PHONY: env-script
+env-script:
+	@echo "Generating setup.sh..."
+	@cat > setup.sh <<'EOF'
+#!/bin/bash
+# ${PROJECT_NAME} Environment Setup
+echo "Setting up ${PROJECT_NAME} development environment..."
+
+${ENV_SETUP}
+
+echo "Environment ready!"
+EOF
+	@chmod +x setup.sh
+	@echo "✓ Created setup.sh"
+	@echo ""
+	@echo "Run: source setup.sh"
+
+.PHONY: build
+build: ${BUILD_DEPS}
+	@echo "Building ${PROJECT_NAME}..."
+${BUILD_COMMANDS}
+
+.PHONY: test
+test: ${TEST_DEPS}
+	@echo "Running tests for ${PROJECT_NAME}..."
+${TEST_COMMANDS}
+
+.PHONY: lint
+lint:
+	@echo "Running linters for ${PROJECT_NAME}..."
+${LINT_COMMANDS}
+
+.PHONY: clean
+clean:
+	@echo "Cleaning build artifacts..."
+${CLEAN_COMMANDS}
+	@rm -f setup.sh
+	@echo "✓ Clean complete"
+
+# ============================================================================
+# Language-Specific Targets
+# ============================================================================
+
+${LANGUAGE_TARGETS}
+
+.DEFAULT_GOAL := help

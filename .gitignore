@@ -1,0 +1,68 @@
+reference-design
+
+# Agentize SDK - Ignore temporary and test artifacts
+
+# Test installations
+test-project/
+test-*/
+example-install/
+
+# Backup files
+*.bak
+*.backup
+*~
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Linux
+*~
+.directory
+
+# Windows
+Thumbs.db
+Desktop.ini
+
+# Editor directories and files
+.vscode/
+.idea/
+*.swp
+*.swo
+*.swn
+.vimrc.local
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Log files
+*.log
+logs/
+
+# Environment files (if testing locally)
+.env
+.env.local
+.env.*.local
+
+# Python (if adding test scripts)
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.coverage
+htmlcov/
+venv/
+env/
+
+# Node.js (if adding test scripts)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Generated documentation
+docs/_build/
+site/
