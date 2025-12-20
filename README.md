@@ -361,7 +361,10 @@ agentize/
 │   ├── skills/                 # 4 reference skills
 │   ├── hooks/                  # 3 lifecycle hooks
 │   └── templates/              # 8 project templates
-└── reference-design/           # Original DSA Stack implementation (not distributed)
+└── templates/                  # Language-specific project templates
+    ├── python/                 # Python project template
+    ├── cxx/                    # C++ project template
+    └── c/                      # C project template
 ```
 
 ### Template Development
@@ -391,15 +394,6 @@ make agentize AGENTIZE_MASTER_PROJ=/tmp/test-port AGENTIZE_MODE=port
 ls -la /tmp/test-init/.claude
 ls -la /tmp/test-port/.claude
 ```
-
-### Despecification Guidelines
-
-When adapting reference-design components:
-1. Replace project-specific tool names with generic examples
-2. Change component tags from project-specific to generic (CORE, API, UI)
-3. Use placeholders for build commands (`make build` instead of `ninja -C build tool`)
-4. Remove organization-specific references
-5. Keep workflow logic and structure intact
 
 ---
 
