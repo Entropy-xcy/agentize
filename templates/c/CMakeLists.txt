@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.15)
 
 project(__PROJECT_NAME__
     VERSION 0.1.0
-    DESCRIPTION "${PROJ_DESC}"
+    DESCRIPTION "TODO: Add project description"
     LANGUAGES C
 )
 

@@ -26,7 +26,6 @@ cd agentize/
 make agentize \
   AGENTIZE_MASTER_PROJ=/path/to/new-project \
   AGENTIZE_PROJ_NAME="My New Project" \
-  AGENTIZE_PROJ_DESC="A software project" \
   AGENTIZE_MODE=init
 ```
 
@@ -59,7 +58,6 @@ make agentize \
 |----------|----------|---------|-------------|
 | `AGENTIZE_MASTER_PROJ` | No | `../..` | Path to target project |
 | `AGENTIZE_PROJ_NAME` | No | `MyProject` | Project name |
-| `AGENTIZE_PROJ_DESC` | No | `A software project` | Project description |
 | `AGENTIZE_MODE` | No | `init` | Installation mode: `init` or `port` |
 | `AGENTIZE_LANG` | No | (empty → `cpp`) | Languages: `python`, `c`, `cpp`, `rust` (comma-separated) |
 | `AGENTIZE_IMPL_DIR` | No | `src` | Implementation directory: `src`, `lib`, etc. |
@@ -266,7 +264,6 @@ See `claude/CUSTOMIZATION_GUIDE.md` for detailed instructions.
 make agentize \
   AGENTIZE_MASTER_PROJ=~/projects/myapp \
   AGENTIZE_PROJ_NAME="MyApp" \
-  AGENTIZE_PROJ_DESC="A React/Node.js web application" \
   AGENTIZE_MODE=port
 ```
 
@@ -278,7 +275,6 @@ After installation, customize `.claude/git-tags.md` with: `[FRONTEND]`, `[BACKEN
 make agentize \
   AGENTIZE_MASTER_PROJ=~/ml-pipeline \
   AGENTIZE_PROJ_NAME="ML Pipeline" \
-  AGENTIZE_PROJ_DESC="Machine learning data pipeline" \
   AGENTIZE_LANG=python \
   AGENTIZE_IMPL_DIR=lib \
   AGENTIZE_MODE=init
@@ -292,7 +288,6 @@ Generates Python package structure. Customize `.claude/git-tags.md` with: `[ANAL
 make agentize \
   AGENTIZE_MASTER_PROJ=~/rust-tool \
   AGENTIZE_PROJ_NAME="RustTool" \
-  AGENTIZE_PROJ_DESC="Command-line utility" \
   AGENTIZE_LANG=rust \
   AGENTIZE_MODE=init
 ```
@@ -376,7 +371,6 @@ agentize/
 
 Templates use placeholder substitution:
 - `${PROJECT_NAME}` → `AGENTIZE_PROJ_NAME`
-- `${PROJ_DESC}` → `AGENTIZE_PROJ_DESC`
 - `__NAME__` → Project name in snake_case (e.g., `my_project`)
 - `__NAME_UPPER__` → Project name in UPPER_SNAKE_CASE (e.g., `MY_PROJECT`)
 - `__PROJECT_NAME__` → Project name alphanumeric for CMake (e.g., `MyProject`)

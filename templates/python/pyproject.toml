@@ -1,7 +1,7 @@
 [project]
 name = "__NAME__"
 version = "0.1.0"
-description = "${PROJ_DESC}"
+description = "TODO: Add project description"
 readme = "README.md"
 requires-python = ">=3.8"
 license = {text = "MIT"}

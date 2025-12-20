@@ -15,10 +15,9 @@ NC='\033[0m' # No Color
 # Parse arguments
 MASTER_PROJ="${1:?Error: Missing AGENTIZE_MASTER_PROJ argument}"
 PROJ_NAME="${2:-MyProject}"
-PROJ_DESC="${3:-A software project}"
-MODE="${4:-init}"
-LANG="${5:-}"
-IMPL_DIR="${6:-src}"
+MODE="${3:-init}"
+LANG="${4:-}"
+IMPL_DIR="${5:-src}"
 
 # Get the directory where this script is located
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -220,7 +219,6 @@ copy_language_template() {
 
     # Escape special characters for sed
     local proj_name_escaped=$(echo "$PROJ_NAME" | sed 's/[\/&]/\\&/g')
-    local proj_desc_escaped=$(echo "$PROJ_DESC" | sed 's/[\/&]/\\&/g')
     local proj_snake_escaped=$(echo "$proj_snake" | sed 's/[\/&]/\\&/g')
     local proj_cmake_escaped=$(echo "$proj_cmake" | sed 's/[\/&]/\\&/g')
     local proj_upper_escaped=$(echo "$proj_upper" | sed 's/[\/&]/\\&/g')
@@ -244,7 +242,6 @@ copy_language_template() {
 
         # Process file content with substitutions
         sed -e "s/\${PROJECT_NAME}/$proj_name_escaped/g" \
-            -e "s/\${PROJ_DESC}/$proj_desc_escaped/g" \
             -e "s/__PROJECT_NAME__/$proj_cmake_escaped/g" \
             -e "s/__NAME_UPPER__/$proj_upper_escaped/g" \
             -e "s/__NAME__/$proj_snake_escaped/g" \
@@ -332,13 +329,11 @@ process_templates() {
 
     # Escape special characters for sed
     PROJ_NAME_ESCAPED=$(echo "$PROJ_NAME" | sed 's/[\/&]/\\&/g')
-    PROJ_DESC_ESCAPED=$(echo "$PROJ_DESC" | sed 's/[\/&]/\\&/g')
     MASTER_PROJ_ESCAPED=$(echo "$MASTER_PROJ" | sed 's/[\/&]/\\&/g')
 
     # Process CLAUDE.md template
     if [ -f "$AGENTIZE_ROOT/claude/templates/CLAUDE.md.template" ]; then
         sed -e "s/\${PROJECT_NAME}/$PROJ_NAME_ESCAPED/g" \
-            -e "s/\${PROJ_DESC}/$PROJ_DESC_ESCAPED/g" \
             "$AGENTIZE_ROOT/claude/templates/CLAUDE.md.template" \
             > "$MASTER_PROJ/.claude/CLAUDE.md"
         log_success "Created .claude/CLAUDE.md"
@@ -381,7 +376,6 @@ initialize_project() {
         mkdir -p "$MASTER_PROJ/docs"
         if [ -f "$AGENTIZE_ROOT/claude/templates/docs-CLAUDE.md.template" ]; then
             sed -e "s/\${PROJECT_NAME}/$PROJ_NAME_ESCAPED/g" \
-                -e "s/\${PROJ_DESC}/$PROJ_DESC_ESCAPED/g" \
                 "$AGENTIZE_ROOT/claude/templates/docs-CLAUDE.md.template" \
                 > "$MASTER_PROJ/docs/CLAUDE.md"
             log_success "Created docs/CLAUDE.md"
@@ -390,7 +384,6 @@ initialize_project() {
         # Create README.md stub
         if [ ! -f "$MASTER_PROJ/README.md" ] && [ -f "$AGENTIZE_ROOT/claude/templates/project-README.md.template" ]; then
             sed -e "s/\${PROJECT_NAME}/$PROJ_NAME_ESCAPED/g" \
-                -e "s/\${PROJ_DESC}/$PROJ_DESC_ESCAPED/g" \
                 "$AGENTIZE_ROOT/claude/templates/project-README.md.template" \
                 > "$MASTER_PROJ/README.md"
             log_success "Created README.md"

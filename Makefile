@@ -5,7 +5,6 @@
 # Public configuration variables
 AGENTIZE_MASTER_PROJ ?= ../..
 AGENTIZE_PROJ_NAME ?= MyProject
-AGENTIZE_PROJ_DESC ?= A software project
 AGENTIZE_MODE ?= init
 AGENTIZE_LANG ?=
 AGENTIZE_IMPL_DIR ?= src
@@ -31,7 +30,6 @@ help:
 	@echo "Options:"
 	@echo "  AGENTIZE_MASTER_PROJ=<path>    Target project directory (default: ../..)"
 	@echo "  AGENTIZE_PROJ_NAME=<name>      Project name (default: MyProject)"
-	@echo "  AGENTIZE_PROJ_DESC=<desc>      Project description"
 	@echo "  AGENTIZE_MODE=<init|port>      Installation mode (default: init)"
 	@echo "  AGENTIZE_LANG=<langs>          Languages: python,c,cpp,rust (default: cpp)"
 	@echo "  AGENTIZE_IMPL_DIR=<dir>        Implementation directory (default: src)"
@@ -61,7 +59,6 @@ agentize:
 	@bash $(INSTALL_SCRIPT) \
 		"$(AGENTIZE_MASTER_PROJ)" \
 		"$(AGENTIZE_PROJ_NAME)" \
-		"$(AGENTIZE_PROJ_DESC)" \
 		"$(AGENTIZE_MODE)" \
 		"$(AGENTIZE_LANG)" \
 		"$(AGENTIZE_IMPL_DIR)"

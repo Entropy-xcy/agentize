@@ -1,7 +1,7 @@
 """
 ${PROJECT_NAME}
 
-${PROJ_DESC}
+TODO: Add project description
 """
 
 __version__ = "0.1.0"

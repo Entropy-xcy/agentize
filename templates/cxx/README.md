@@ -1,6 +1,6 @@
 # ${PROJECT_NAME}
 
-${PROJ_DESC}
+TODO: Add project description
 
 ## Build
 

@@ -82,7 +82,7 @@ Choose tags that:
 ```markdown
 ${PROJECT_NAME}
 
-${PROJ_DESC}
+TODO: Add project description
 ```
 Replace with your actual project description.
 
