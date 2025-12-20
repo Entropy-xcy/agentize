@@ -99,13 +99,13 @@ Note: Tests show "SKIPPED" if build failed or had warnings. Lint shows "SKIPPED"
 - Do NOT make suggestions beyond "fix warnings" or "fix lint issues"
 - Keep output concise
 
-## Integration with /work-on-issue
+## Integration with /issue2impl
 
-This agent is invoked at **Phase 7.0** (Pre-Commit Gate) of the `/work-on-issue` workflow.
+This agent is invoked at **Phase 7.0** (Pre-Commit Gate) of the `/issue2impl` workflow.
 
 ### Gate Status to Workflow Action
 
-| Gate Status | /work-on-issue Action |
+| Gate Status | /issue2impl Action |
 |-------------|----------------------|
 | **PASS** | Proceed to Phase 7.1 (Stage and Commit) |
 | **FAIL (build errors)** | Return to Phase 6.1, fix build errors, re-review |

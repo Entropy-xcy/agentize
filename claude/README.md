@@ -27,7 +27,7 @@ This directory configures Claude Code for your project, providing automated work
 
 ## Meta-Commands
 
-### /work-on-issue
+### /issue2impl
 
 End-to-end workflow for resolving GitHub issues with code review cycles.
 
@@ -43,7 +43,7 @@ Note: Extended tier overrides fast tier if both criteria match.
 
 ```mermaid
 flowchart TB
-    Start([/work-on-issue]) --> P1
+    Start([/issue2impl]) --> P1
 
     subgraph P1[Phase 1: Input Validation]
         IV[input-validator]
@@ -130,13 +130,13 @@ flowchart TB
 
 ---
 
-### /idea-to-issues
+### /feat2issue
 
 Transform design ideas into actionable GitHub issues through interactive brainstorming.
 
 ```mermaid
 flowchart TB
-    Start([/idea-to-issues]) --> P0
+    Start([/feat2issue]) --> P0
 
     subgraph P0[Phase 0: Input Validation]
         IV2[input-validator]
@@ -215,14 +215,14 @@ User Idea -> creative-proposer (divergent) -> critical-checker (convergent) -> c
 ```
 Commands (Entry Points)
     │
-    ├── /work-on-issue ─┬─> input-validator
+    ├── /issue2impl ─┬─> input-validator
     │                   ├─> issue-analyzer
     │                   ├─> doc-architect
     │                   ├─> code-reviewer
     │                   ├─> milestone-generator ──> project-manager
     │                   └─> pre-commit-gate
     │
-    ├── /idea-to-issues ┬─> input-validator
+    ├── /feat2issue ┬─> input-validator
     │                   ├─> idea-creative-proposer
     │                   ├─> idea-critical-checker
     │                   ├─> idea-comprehensive-analyzer
@@ -243,9 +243,9 @@ Commands (Entry Points)
 
 | Skill | Content | Used By |
 |-------|---------|---------|
-| `workflow-reference` | Size thresholds, L1/L2 tag inference, error handling | `/work-on-issue` (Phases 4, 5, 7) |
-| `pr-templates` | PR body templates, summary templates | `/work-on-issue` (Phase 7, 9) |
-| `issue-templates` | Feature, sub-issue, doc, refactor templates | `/idea-to-issues` (Phase 5) |
+| `workflow-reference` | Size thresholds, L1/L2 tag inference, error handling | `/issue2impl` (Phases 4, 5, 7) |
+| `pr-templates` | PR body templates, summary templates | `/issue2impl` (Phase 7, 9) |
+| `issue-templates` | Feature, sub-issue, doc, refactor templates | `/feat2issue` (Phase 5) |
 | `ci-checks` | Local CI validation (format, special chars, links) | Code review phase |
 
 ## Rules Summary
@@ -277,11 +277,11 @@ See `CUSTOMIZATION_GUIDE.md` for detailed instructions.
 
 ```bash
 # Resolve an issue end-to-end
-/work-on-issue 123
+/issue2impl 123
 
 # Transform idea into implementation issues
-/idea-to-issues "Add user authentication feature"
-/idea-to-issues ./docs/draft/my-idea.md
+/feat2issue "Add user authentication feature"
+/feat2issue ./docs/draft/my-idea.md
 
 # Generate milestone for incomplete work
 /gen-milestone

@@ -308,7 +308,7 @@ Create draft document at `docs/draft/<topic>-<timestamp>.md`:
 This design is ready for:
 1. Documentation formalization (docs/architecture/)
 2. Implementation issue creation
-3. Development via /work-on-issue
+3. Development via /issue2impl
 
 ---
 
@@ -441,9 +441,9 @@ Before completing output, verify:
 - [ ] User has enough information to decide
 - [ ] If DESIGN_CONFIRMED, draft document is created
 
-## Integration with /idea-to-issues
+## Integration with /feat2issue
 
-This agent is invoked as the **third and final step** of Phase 1 (Brainstorming) in the `/idea-to-issues` workflow.
+This agent is invoked as the **third and final step** of Phase 1 (Brainstorming) in the `/feat2issue` workflow.
 
 ### Spawn Context
 

@@ -265,9 +265,9 @@ Before completing output, verify:
 - [ ] Tradeoffs are explicitly identified
 - [ ] Questions for critique are substantive
 
-## Integration with /idea-to-issues
+## Integration with /feat2issue
 
-This agent is invoked as the **first step** of Phase 1 (Brainstorming) in the `/idea-to-issues` workflow.
+This agent is invoked as the **first step** of Phase 1 (Brainstorming) in the `/feat2issue` workflow.
 
 ### Spawn Context
 

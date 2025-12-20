@@ -1,12 +1,12 @@
 ---
 name: issue-templates
-description: Templates for GitHub implementation issues created by /idea-to-issues workflow. Contains feature, sub-issue, documentation, and refactoring templates. Use when creating issues that describe requirements and design.
+description: Templates for GitHub implementation issues created by /feat2issue workflow. Contains feature, sub-issue, documentation, and refactoring templates. Use when creating issues that describe requirements and design.
 allowed-tools: Read
 ---
 
 # Issue Templates Skill
 
-This skill provides standardized templates for creating GitHub implementation issues in the `/idea-to-issues` workflow.
+This skill provides standardized templates for creating GitHub implementation issues in the `/feat2issue` workflow.
 
 ## When to Use
 

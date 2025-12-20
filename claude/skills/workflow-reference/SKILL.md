@@ -1,12 +1,12 @@
 ---
 name: workflow-reference
-description: Reference tables and decision guides for /work-on-issue workflow. Contains size thresholds, L1/L2 tag inference, and error handling. Use when making workflow decisions about sizing, tagging, or error recovery.
+description: Reference tables and decision guides for /issue2impl workflow. Contains size thresholds, L1/L2 tag inference, and error handling. Use when making workflow decisions about sizing, tagging, or error recovery.
 allowed-tools: Read
 ---
 
 # Workflow Reference Skill
 
-This skill provides decision tables and reference guides for the `/work-on-issue` workflow.
+This skill provides decision tables and reference guides for the `/issue2impl` workflow.
 
 ## When to Use
 

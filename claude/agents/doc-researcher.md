@@ -322,9 +322,9 @@ This information should be used in Phase 4 (Planning) to:
 - Recommend appropriate locations per guidelines
 - Suggest content that matches project style
 
-## Integration with /idea-to-issues
+## Integration with /feat2issue
 
-This agent is invoked during **Phase 3 (Documentation Research)** of the `/idea-to-issues` workflow.
+This agent is invoked during **Phase 3 (Documentation Research)** of the `/feat2issue` workflow.
 
 ### Spawn Context
 

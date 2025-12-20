@@ -1,5 +1,5 @@
 ---
-name: work-on-issue
+name: issue2impl
 description: Complete end-to-end workflow to resolve a GitHub issue with code review cycles
 argument-hint: <issue-number>
 allowed-tools: Bash(git status:*), Bash(git diff:*), Bash(git log:*), Bash(git branch:*), Bash(git fetch:*), Bash(git add:*), Bash(git commit:*), Bash(git push:*), Bash(gh repo view:*), Bash(gh issue view:*), Bash(gh issue list:*), Bash(gh issue comment:*), Bash(gh issue create:*), Bash(gh label create:*), Bash(gh api:*), Bash(gh pr create:*), Bash(gh pr view:*), Bash(gh pr list:*), Bash(gh pr comment:*), Bash(make all:*), Bash(make test:*), Bash(ninja:*), Bash(sleep:*), Bash(date:*)
@@ -18,7 +18,7 @@ allowed-tools: Bash(git status:*), Bash(git diff:*), Bash(git log:*), Bash(git b
 **Spawn `input-validator` agent (Haiku):**
 
 ```
-Validate inputs for /work-on-issue workflow.
+Validate inputs for /issue2impl workflow.
 Issue number: $1
 Current branch: <from context>
 ```

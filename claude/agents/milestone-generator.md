@@ -284,9 +284,9 @@ The calling context MUST spawn `project-manager` agent (NOTE: project-manager on
 - Document assumptions and constraints
 - Avoid fabricating time estimates - use ranges or "TBD"
 
-## Integration with /work-on-issue
+## Integration with /issue2impl
 
-This agent is invoked in specific scenarios during the `/work-on-issue` workflow.
+This agent is invoked in specific scenarios during the `/issue2impl` workflow.
 
 ### Trigger Thresholds
 
@@ -298,9 +298,9 @@ This agent is invoked in specific scenarios during the `/work-on-issue` workflow
 
 **Note:** Phase 4 (Planning) identifies potential need for milestone but does NOT spawn this agent. The workflow only plans breakpoints during Phase 4; actual milestone creation happens during implementation.
 
-### Spawn Context from /work-on-issue
+### Spawn Context from /issue2impl
 
-When invoked by `/work-on-issue`, you receive:
+When invoked by `/issue2impl`, you receive:
 ```
 Generate a milestone issue for continuing work on issue #$ISSUE_NUMBER.
 
@@ -327,7 +327,7 @@ Context:
 
 ### Invoked By
 
-- `/work-on-issue` when size threshold exceeded
+- `/issue2impl` when size threshold exceeded
 - `/gen-milestone` for explicit milestone generation
 - User request for work continuation documentation
 

@@ -285,9 +285,9 @@ Before completing output, verify:
 - [ ] Viability assessment is justified
 - [ ] Actionable questions for user identified
 
-## Integration with /idea-to-issues
+## Integration with /feat2issue
 
-This agent is invoked as the **second step** of Phase 1 (Brainstorming) in the `/idea-to-issues` workflow.
+This agent is invoked as the **second step** of Phase 1 (Brainstorming) in the `/feat2issue` workflow.
 
 ### Spawn Context
 

@@ -161,10 +161,10 @@ Once installed, use these slash commands in your Claude Code session:
 
 ```bash
 # Resolve a GitHub issue end-to-end
-/work-on-issue 123
+/issue2impl 123
 
 # Transform an idea into actionable issues
-/idea-to-issues "Add user authentication feature"
+/feat2issue "Add user authentication feature"
 
 # Generate milestone for incomplete work
 /gen-milestone
@@ -178,7 +178,7 @@ Once installed, use these slash commands in your Claude Code session:
 
 ## Workflow Overview
 
-### `/work-on-issue` - 9-Phase Workflow
+### `/issue2impl` - 9-Phase Workflow
 
 1. **Input Validation** - Verify issue number, branch, dependencies
 2. **Issue Analysis** - Analyze requirements and codebase (with triage)
@@ -195,7 +195,7 @@ Once installed, use these slash commands in your Claude Code session:
 - **Standard**: Default full workflow
 - **Extended**: Multi-component, >1500 lines → Add architecture review
 
-### `/idea-to-issues` - Design to Implementation
+### `/feat2issue` - Design to Implementation
 
 1. **Input Validation** - Parse idea (text or file)
 2. **Three-Agent Brainstorming**:

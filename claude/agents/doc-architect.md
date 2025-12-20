@@ -210,9 +210,9 @@ This appears to be a [bug fix/trivial change] that may not need new documentatio
 **Skip documentation phase? [Yes/No, I want to document something]**
 ```
 
-## Integration with /work-on-issue
+## Integration with /issue2impl
 
-This agent is invoked during **Phase 3 (Documentation Review)** of the `/work-on-issue` workflow.
+This agent is invoked during **Phase 3 (Documentation Review)** of the `/issue2impl` workflow.
 
 ### Input Interface
 

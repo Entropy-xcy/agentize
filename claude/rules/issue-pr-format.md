@@ -393,5 +393,5 @@ Agents and commands that create PRs MUST:
 | Tool | Creates | Template |
 |------|---------|----------|
 | `handoff-generator` | Sub-issues | Sub-Issue template |
-| `/work-on-issue` | PRs | PR template |
+| `/issue2impl` | PRs | PR template |
 | `/gen-handoff` | Sub-issues | Sub-Issue template |

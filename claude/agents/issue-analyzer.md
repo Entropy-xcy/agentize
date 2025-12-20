@@ -436,9 +436,9 @@ Always include at the end of Related PR Analysis section:
 - Priority 4 (Bot Minor): N items
 ```
 
-## Integration with /work-on-issue
+## Integration with /issue2impl
 
-This agent is invoked during **Phase 2 (Issue Analysis)** of the `/work-on-issue` workflow.
+This agent is invoked during **Phase 2 (Issue Analysis)** of the `/issue2impl` workflow.
 
 ### Spawn Context
 
@@ -450,7 +450,7 @@ When spawned, you receive:
 
 The analysis report **MUST** include an Estimated Scope classification:
 
-| Classification | Estimated Lines | Action in /work-on-issue |
+| Classification | Estimated Lines | Action in /issue2impl |
 |----------------|-----------------|--------------------------|
 | `small` | < 500 | Proceed normally |
 | `medium` | 500-1000 | Proceed, monitor size |

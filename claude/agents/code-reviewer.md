@@ -293,9 +293,9 @@ Note: CI status (build, tests, linting) is handled by GitHub's branch protection
 - **Be specific**: Reference exact file:line for all issues.
 - **Be honest**: If score is 75, give 75. Do not inflate to pass threshold.
 
-## Integration with /work-on-issue
+## Integration with /issue2impl
 
-This agent is invoked during **Phase 6 (Code Review Cycle)** of the `/work-on-issue` workflow.
+This agent is invoked during **Phase 6 (Code Review Cycle)** of the `/issue2impl` workflow.
 
 ### Review Cycle Management
 

@@ -15,8 +15,8 @@
 **Note**: This rule does NOT apply to issues created manually outside of Claude Code workflows.
 
 This rule applies to ALL Claude Code issue-creating operations:
-- `/idea-to-issues` command
-- `/work-on-issue` command (via `handoff-generator`)
+- `/feat2issue` command
+- `/issue2impl` command (via `handoff-generator`)
 - `/gen-handoff` command
 - Any agent that creates GitHub issues
 
@@ -67,7 +67,7 @@ The calling context MUST spawn `project-manager` agent with:
 
 ### For Commands
 
-Commands (e.g., `/gen-handoff`, `/work-on-issue`, `/idea-to-issues`) must:
+Commands (e.g., `/gen-handoff`, `/issue2impl`, `/feat2issue`) must:
 
 1. **Spawn issue-creating agent** if needed
 2. **Parse agent output** to extract issue numbers and metadata
@@ -94,14 +94,14 @@ Add to appropriate project and update fields.
 
 ## Workflow-Specific Integration
 
-### /idea-to-issues
+### /feat2issue
 
 | Phase | Issue Created | project-manager Required |
 |-------|---------------|--------------------------|
 | 5.1.1 | Documentation issue | Yes (Phase 5.1.1a) |
 | 5.2 | Implementation issues | Yes (Phase 5.3, for each) |
 
-### /work-on-issue
+### /issue2impl
 
 | Phase | Issue Created | project-manager Required |
 |-------|---------------|--------------------------|
@@ -152,6 +152,6 @@ When reviewing or creating issue-creating workflows:
 | `.claude/agents/project-manager.md` | Agent definition |
 | `.claude/agents/handoff-generator.md` | Returns issue details for project-manager |
 | `.claude/agents/issue-creator.md` | Returns issue list for project-manager |
-| `.claude/commands/work-on-issue.md` | Phase 5.4.2 spawns project-manager |
+| `.claude/commands/issue2impl.md` | Phase 5.4.2 spawns project-manager |
 | `.claude/commands/gen-handoff.md` | Step 7 spawns project-manager |
-| `.claude/commands/idea-to-issues.md` | Phase 5.1.1a and 5.3 spawn project-manager |
+| `.claude/commands/feat2issue.md` | Phase 5.1.1a and 5.3 spawn project-manager |

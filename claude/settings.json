@@ -105,7 +105,7 @@
       "Bash(git checkout:*)",
       "Bash(git commit:*)",
       "Bash(git push:*)",
-      
+
       "Bash(echo KIND OF TOO GENERAL COMMANDS)",
       "Bash(python3:*)",
       "Bash(test:*)",

@@ -268,9 +268,9 @@ This information should be used in Phase 4 (Planning) to:
 - **Ambiguous relevance**: Flag for user decision
 - **Rate limits**: Note if search was incomplete
 
-## Integration with /idea-to-issues
+## Integration with /feat2issue
 
-This agent is invoked during **Phase 2 (Issue Research)** of the `/idea-to-issues` workflow.
+This agent is invoked during **Phase 2 (Issue Research)** of the `/feat2issue` workflow.
 
 ### Spawn Context
 

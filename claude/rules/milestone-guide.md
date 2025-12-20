@@ -17,7 +17,7 @@ Milestones are created as GitHub issues. This provides:
 
 **Created by**:
 - `/gen-milestone` command
-- `milestone-generator` agent (automated via `/work-on-issue`)
+- `milestone-generator` agent (automated via `/issue2impl`)
 
 ---
 
@@ -28,7 +28,7 @@ Create a milestone summary when:
 - Some tasks are completed but others remain pending
 - Context and decisions made during the session are valuable for continuation
 - User explicitly requests a summary for the next agent
-- **PR size exceeds threshold** (>1000 lines, triggered automatically by `/work-on-issue`)
+- **PR size exceeds threshold** (>1000 lines, triggered automatically by `/issue2impl`)
 
 Do NOT create milestone summaries for:
 - Simple, single-step tasks already completed
@@ -37,9 +37,9 @@ Do NOT create milestone summaries for:
 
 ---
 
-## Integration with /work-on-issue
+## Integration with /issue2impl
 
-The `/work-on-issue` command includes automatic milestone generation:
+The `/issue2impl` command includes automatic milestone generation:
 
 ### Size Thresholds
 
@@ -52,7 +52,7 @@ The `/work-on-issue` command includes automatic milestone generation:
 
 ### Automatic Flow
 
-1. `/work-on-issue` monitors PR size during implementation
+1. `/issue2impl` monitors PR size during implementation
 2. When threshold exceeded, spawns `milestone-generator` agent
 3. Agent creates GitHub issue with milestone structure
 4. Issue linked to parent, PR marked as partial

@@ -323,10 +323,10 @@ Before finalizing, verify:
 
 This command can be invoked:
 - Manually by user: `/gen-milestone`
-- By `/work-on-issue` when size threshold exceeded
+- By `/issue2impl` when size threshold exceeded
 - At end of session when work is incomplete
 
 This command spawns:
 - `project-manager` agent to add created issues to GitHub Project and update fields
 
-For automatic milestone during `/work-on-issue`, use the `milestone-generator` agent which follows the same structure but is optimized for integration with the issue workflow.
+For automatic milestone during `/issue2impl`, use the `milestone-generator` agent which follows the same structure but is optimized for integration with the issue workflow.

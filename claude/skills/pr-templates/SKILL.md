@@ -1,12 +1,12 @@
 ---
 name: pr-templates
-description: Templates for PR bodies and final summaries used by /work-on-issue workflow. Contains standard and handoff PR templates, completion summaries. Use when creating PRs or reporting workflow completion.
+description: Templates for PR bodies and final summaries used by /issue2impl workflow. Contains standard and handoff PR templates, completion summaries. Use when creating PRs or reporting workflow completion.
 allowed-tools: Read
 ---
 
 # PR Templates Skill
 
-This skill provides standardized templates for Pull Requests and workflow summaries in the `/work-on-issue` workflow.
+This skill provides standardized templates for Pull Requests and workflow summaries in the `/issue2impl` workflow.
 
 ## When to Use
 

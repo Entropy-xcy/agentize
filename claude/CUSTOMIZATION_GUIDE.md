@@ -262,7 +262,7 @@ npm test
 
 ### Adjusting Triage Thresholds
 
-Edit `commands/work-on-issue.md` to change triage criteria:
+Edit `commands/issue2impl.md` to change triage criteria:
 
 ```markdown
 | Tier | Criteria | Workflow Modification |
@@ -458,7 +458,7 @@ After customization, verify:
 - [ ] `make build` successfully builds your project
 - [ ] `make test` successfully runs your test suite
 - [ ] `agents/project-manager.md` component mapping matches your tags
-- [ ] `/work-on-issue` command works end-to-end on a test issue
+- [ ] `/issue2impl` command works end-to-end on a test issue
 
 ---
 

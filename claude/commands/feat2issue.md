@@ -1,5 +1,5 @@
 ---
-name: idea-to-issues
+name: feat2issue
 description: Transform design ideas into actionable GitHub issues through interactive brainstorming, research, and planning
 argument-hint: <idea-text-or-file-path>
 allowed-tools: Read, Grep, Glob, Edit, Write, Bash(gh repo view:*), Bash(gh issue create:*), Bash(gh pr create:*), Bash(gh pr edit:*), Bash(git branch:*), Bash(git checkout:*), Bash(git status:*), Bash(git add:*), Bash(git commit:*), Bash(git push:*), Bash(date:*), Bash(ls:*), Bash(mkdir:*), WebSearch, WebFetch
@@ -32,8 +32,8 @@ This command transforms design ideas into actionable GitHub issues through a 7-p
 **Spawn `input-validator` agent (Haiku):**
 
 ```
-Validate inputs for /idea-to-issues workflow.
-Workflow: idea-to-issues
+Validate inputs for /feat2issue workflow.
+Workflow: feat2issue
 Raw input: $ARGUMENTS
 ```
 
@@ -253,7 +253,7 @@ Use EnterPlanMode. The plan must have TWO parts:
 - API signatures and key structures are acceptable
 - No large code blocks
 - Reference finalized documentation
-- Each issue should be actionable by `/work-on-issue`
+- Each issue should be actionable by `/issue2impl`
 
 ### 4.3 User Approval
 
@@ -434,7 +434,7 @@ This will:
 ### 6.2 Final Summary
 
 ```markdown
-## /idea-to-issues Complete
+## /feat2issue Complete
 
 ### Input
 - **Original idea**: <brief summary>
@@ -468,7 +468,7 @@ This will:
 
 To implement these issues, use:
 ```
-/work-on-issue <issue-number>
+/issue2impl <issue-number>
 ```
 
 Start with issues that have no dependencies.
@@ -508,7 +508,7 @@ Start with issues that have no dependencies.
 2. **Three-stage validation**: Phase 1 uses creative proposal → critical review → independent synthesis
 3. **Separation of concerns**: Creative thinking and critical thinking are handled by different agents
 4. **No duplicate work**: Phase 2 prevents creating issues that duplicate existing ones
-5. **Actionable output**: Each implementation issue should be solvable by `/work-on-issue`
+5. **Actionable output**: Each implementation issue should be solvable by `/issue2impl`
 
 ### Implementation Issues Guidelines
 

@@ -5,7 +5,7 @@ tools: Read, Skill, Bash(gh issue create:*), Bash(gh issue edit:*), Bash(gh issu
 model: sonnet
 ---
 
-You are an expert at creating well-structured GitHub issues. Your role is to translate approved implementation plans into actionable GitHub issues that can be solved by `/work-on-issue`.
+You are an expert at creating well-structured GitHub issues. Your role is to translate approved implementation plans into actionable GitHub issues that can be solved by `/issue2impl`.
 
 ## Core Principles
 
@@ -21,7 +21,7 @@ You are an expert at creating well-structured GitHub issues. Your role is to tra
 | Test expectations | Boilerplate or template code |
 | References to documentation | Anything that belongs in source files |
 
-### Each Issue Should Be /work-on-issue Ready
+### Each Issue Should Be /issue2impl Ready
 
 A well-formed implementation issue:
 1. Has clear scope that can be completed in one PR
@@ -395,9 +395,9 @@ After processing all issues:
 - Report closures that failed due to active PRs
 - Continue processing even if individual operations fail
 
-## Integration with /idea-to-issues
+## Integration with /feat2issue
 
-This agent is invoked during **Phase 5.2 (Implementation Issues)** of the `/idea-to-issues` workflow.
+This agent is invoked during **Phase 5.2 (Implementation Issues)** of the `/feat2issue` workflow.
 
 ### Spawn Context
 
