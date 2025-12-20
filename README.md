@@ -228,30 +228,35 @@ The SDK is highly customizable. After installation:
    - `custom-workflows.md` - Development workflows, deployment processes
 
 3. **Configure Build Commands** in your `Makefile`:
+
+   For Python projects:
    ```makefile
    build:
-       npm install && npm run build
+       pip install -e .
 
    test:
-       npm test
+       pytest tests/
+   ```
+
+   For C/C++ projects:
+   ```makefile
+   build:
+       cmake -B build && cmake --build build
+
+   test:
+       cd build && ctest --output-on-failure
+   ```
+
+   For Rust projects:
+   ```makefile
+   build:
+       cargo build --release
+
+   test:
+       cargo test
    ```
 
 See `claude/CUSTOMIZATION_GUIDE.md` for detailed instructions.
-
-## Project Structure
-
-```
-.claude/
-├── CLAUDE.md           # Project-level instructions (auto-loaded)
-├── settings.json       # Permission and hooks configuration
-├── agents/             # Specialized subagents (13 agents)
-├── commands/           # Slash commands (8 commands)
-├── hooks/              # Lifecycle hooks (3 hooks)
-├── rules/              # Behavioral rules (12 rules)
-└── skills/             # Reference data and templates (4 skills)
-```
-
-See `claude/README.md` for detailed component documentation.
 
 ## Examples
 
