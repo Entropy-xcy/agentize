@@ -177,6 +177,17 @@ make test
 
 See `templates/python/Makefile.template`, `templates/cxx/Makefile.template`, etc. for language-specific examples.
 
+## Test Infrastructure
+
+Agentize uses a unified test infrastructure with project-local temporary directories for better isolation and access control:
+
+- **Project-local `.tmp/` directory**: Tests use `.tmp/` instead of system `/tmp/` to avoid permission issues in restricted environments
+- **Common test utilities**: `tests/lib/test-utils.sh` and `tests/lib/assertions.sh` provide reusable test functions
+- **Unified test targets**: `make test` runs all SDK tests
+- **Automatic cleanup**: `make clean` removes `.tmp/` artifacts
+
+For detailed documentation, see [tests/README.md](tests/README.md) and [docs/architecture/test-infrastructure.md](docs/architecture/test-infrastructure.md).
+
 ## Key Commands
 
 Once installed, use these slash commands in your Claude Code session:

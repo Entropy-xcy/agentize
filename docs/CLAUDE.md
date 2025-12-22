@@ -54,7 +54,17 @@ make build
 make test
 ```
 
-[TODO: Document testing strategy and how to run specific tests]
+The project uses a unified test infrastructure with project-local temporary directories (`.tmp/`) for better isolation and access control.
+
+**Test Infrastructure:**
+- Tests create isolated directories under `.tmp/` (not system `/tmp/`)
+- Common test utilities in `tests/lib/` (test-utils.sh, assertions.sh)
+- Unified `make test` target runs all SDK tests
+- `make clean` removes `.tmp/` artifacts
+
+**For detailed documentation:**
+- See [tests/README.md](../tests/README.md) for test utilities reference
+- See [Test Infrastructure Design](architecture/test-infrastructure.md) for architecture details
 
 ### Project Structure
 
