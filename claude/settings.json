@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(./tests/test-c-sdk.sh:*)",
+      "Bash(make test:*)"
+    ],
+    "deny": [
+      "Bash(cd:*)"
+    ]
+  }
+}

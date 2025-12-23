@@ -18,3 +18,22 @@ make agentize \
 This will create an initial SDK structure in the specified project path.
 For more details of the variables and options available, refer to our
 [usage document](./docs/OPTIONS.md).
+
+## Core Phylosophy
+
+1. Plan first, code later: Use AI to generate a detailed plan before writing any code.
+  - Plan is put on Github Issues for tracking.
+2. Build [skills](https://agentskills.io/), do not build agents.
+  - Skills are modular reusable, formal, and lightweighted flow definitions.
+
+## Project Organization
+
+```plaintext
+agentize/
+├── docs/                   # Document, currently we only have option usage
+├── templates/              # Templates for SDK generation
+├── tests/                  # Test cases
+├── .gitignore              # Git ignore file
+├── Makefile                # Makefile for creating SDKs
+└── README.md               # This readme file
+```
