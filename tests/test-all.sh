@@ -27,20 +27,15 @@ else
 fi
 echo ""
 
-# Test C++ SDK (TODO)
+# Test C++ SDK
 echo ">>> Testing C++ SDK..."
 TOTAL_TESTS=$((TOTAL_TESTS + 1))
-if [ -s "$SCRIPT_DIR/test-cxx-sdk.sh" ]; then
-    if bash "$SCRIPT_DIR/test-cxx-sdk.sh"; then
-        echo "✓ C++ SDK tests passed"
-        PASSED_TESTS=$((PASSED_TESTS + 1))
-    else
-        echo "✗ C++ SDK tests failed"
-        FAILED_TESTS=$((FAILED_TESTS + 1))
-    fi
+if bash "$SCRIPT_DIR/test-cxx-sdk.sh"; then
+    echo "✓ C++ SDK tests passed"
+    PASSED_TESTS=$((PASSED_TESTS + 1))
 else
-    echo "⊘ C++ SDK tests not yet implemented (skipping)"
-    TOTAL_TESTS=$((TOTAL_TESTS - 1))
+    echo "✗ C++ SDK tests failed"
+    FAILED_TESTS=$((FAILED_TESTS + 1))
 fi
 echo ""
 

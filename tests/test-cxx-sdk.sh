@@ -1,0 +1,95 @@
+#!/bin/bash
+
+set -e
+
+# Get the directory where this script is located
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+
+echo "======================================"
+echo "Testing C++ SDK with different SOURCE_PATH configurations"
+echo "======================================"
+echo ""
+
+# Test 1: Default source path (src/)
+echo ">>> Test 1: Default source path (src/)"
+TMP_DIR_SRC="$PROJECT_ROOT/.tmp/cxx-sdk-test-src"
+rm -rf "$TMP_DIR_SRC"
+
+echo "Creating C++ SDK with default source path..."
+make -C "$PROJECT_ROOT" agentize \
+    AGENTIZE_PROJECT_NAME="test-cxx-sdk-src" \
+    AGENTIZE_PROJECT_PATH="$TMP_DIR_SRC" \
+    AGENTIZE_PROJECT_LANG="cxx" \
+    AGENTIZE_MODE="init"
+
+# Verify src/ directory exists
+if [ ! -d "$TMP_DIR_SRC/src" ]; then
+    echo "Error: src/ directory not found!"
+    exit 1
+fi
+
+if [ ! -f "$TMP_DIR_SRC/src/hello.cpp" ]; then
+    echo "Error: hello.cpp not found in src/!"
+    exit 1
+fi
+
+echo "Building C++ SDK with src/..."
+make -C "$TMP_DIR_SRC" build
+
+echo "Running C++ SDK tests with src/..."
+make -C "$TMP_DIR_SRC" test
+
+echo "✓ Test 1 passed: Default source path (src/) works"
+echo ""
+
+# Test 2: Custom source path (lib/)
+echo ">>> Test 2: Custom source path (lib/)"
+TMP_DIR_LIB="$PROJECT_ROOT/.tmp/cxx-sdk-test-lib"
+rm -rf "$TMP_DIR_LIB"
+
+echo "Creating C++ SDK with custom source path (lib/)..."
+make -C "$PROJECT_ROOT" agentize \
+    AGENTIZE_PROJECT_NAME="test-cxx-sdk-lib" \
+    AGENTIZE_PROJECT_PATH="$TMP_DIR_LIB" \
+    AGENTIZE_PROJECT_LANG="cxx" \
+    AGENTIZE_SOURCE_PATH="lib" \
+    AGENTIZE_MODE="init"
+
+# Verify lib/ directory exists and src/ does not
+if [ -d "$TMP_DIR_LIB/src" ]; then
+    echo "Error: src/ directory should not exist when using custom SOURCE_PATH!"
+    exit 1
+fi
+
+if [ ! -d "$TMP_DIR_LIB/lib" ]; then
+    echo "Error: lib/ directory not found!"
+    exit 1
+fi
+
+if [ ! -f "$TMP_DIR_LIB/lib/hello.cpp" ]; then
+    echo "Error: hello.cpp not found in lib/!"
+    exit 1
+fi
+
+# Verify CMakeLists.txt references lib/ instead of src/
+if grep -q "src/hello.cpp" "$TMP_DIR_LIB/CMakeLists.txt"; then
+    echo "Error: CMakeLists.txt still references src/ instead of lib/!"
+    exit 1
+fi
+
+echo "Building C++ SDK with lib/..."
+make -C "$TMP_DIR_LIB" build
+
+echo "Running C++ SDK tests with lib/..."
+make -C "$TMP_DIR_LIB" test
+
+echo "✓ Test 2 passed: Custom source path (lib/) works"
+echo ""
+
+echo "======================================"
+echo "All C++ SDK tests completed successfully!"
+echo "======================================"
+echo "Test projects remain at:"
+echo "  - Default (src/): $TMP_DIR_SRC"
+echo "  - Custom (lib/):  $TMP_DIR_LIB"
