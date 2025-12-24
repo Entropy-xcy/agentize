@@ -12,6 +12,7 @@
       "Bash(tee:*)",
       "Bash(awk:*)",
       "Bash(xargs ls:*)",
+      "Bash(xargs wc:*)",
       "Bash(echo BUILD TOOLS - Compilation and build system)",
       "Bash(ninja:*)",
       "Bash(cmake:*)",

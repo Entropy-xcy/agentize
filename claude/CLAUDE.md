@@ -1,0 +1,1 @@
+- Use `docs/llms.txt` to check the Claude related documentations when needed.
