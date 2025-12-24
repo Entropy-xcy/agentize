@@ -88,20 +88,9 @@ Execute the review-standard skill with gathered context:
 - Full diff content
 - Repository root path
 
-**Skill performs:**
+The skill performs a comprehensive two-phase review (see `claude/skills/review-standard/SKILL.md` for details):
 - Phase 1: Documentation Quality Review
-  - Validate folder README.md files
-  - Check source interface documentation
-  - Verify test documentation
-  - Check for design documentation needs
-  - Run documentation linter
-
 - Phase 2: Code Quality & Reuse Review
-  - Check for code duplication
-  - Identify local utility reuse opportunities
-  - Identify external library reuse opportunities
-  - Review imports and dependencies
-  - Verify project conventions
 
 **Skill output:**
 - Structured review report with findings
