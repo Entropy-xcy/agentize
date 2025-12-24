@@ -54,8 +54,8 @@ Please provide a `docs/git-msg-tags.md`, which can be as simple as the following
 
 ## Ownership
 
-Any AI agent **SHALL NOT** claim the co-authorship of the commit with the user.
-It is the user who is **FULLY** responsible for the commit.
+**DO NOT** claim the co-authorship of the commit with the user
+in the message. It is the user who is **FULLY** responsible for the commit.
 
 ## Pre-commit Check
 

@@ -43,7 +43,7 @@ graph TD
     D[3rd-party reviewer: Synthesize final plan via consensus & conflicts] --> E[User approves/rejects plan]
     E -->|Approved| F[Create Github Issue]
     E -->|Refined| A
-    E -->|Abandoned| Z[End]
+    E -->|Abandoned| Z(End)
     F[Open a dev issue] --> G[Code implementation]
 
     style A fill:#ffcccc
