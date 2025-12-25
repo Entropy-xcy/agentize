@@ -30,8 +30,9 @@
       "Bash(module load:*)",
 
       "Bash(echo SKILL - Agent skills)",
-      "Skill(pr-templates)",
-      "Skill(issue-templates)",
+      "Skill(open-pr)",
+      "Skill(open-issue)",
+      "Skill(fork-dev-branch)",
 
       "Bash(echo GIT READ OPERATIONS - Non-destructive git commands)",
       "Bash(git status:*)",
