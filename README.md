@@ -99,9 +99,6 @@ Learn Agentize in 15 minutes with our step-by-step tutorials (3-5 min each):
 3. **[Issue to Implementation](./docs/02-issue-to-impl.md)** - Complete development cycle with `/issue-to-impl`, `/code-review`, and `/sync-master`
 4. **[Advanced Usage](./docs/03-advanced-usage.md)** - Scale up with parallel development workflows
 
-For internal implementation details, see [our developer guide](./docs/contrib.md).
-
-
 ## Project Organization
 
 ```plaintext

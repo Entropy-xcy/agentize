@@ -147,7 +147,7 @@ Don't merge all PRs at once. Instead:
 1. Complete Worker 1 (Issue #45)
    - `/code-review`
    - `/sync-master`
-   - `/open-pr`
+   - Ask Claude: "Create a pull request"
    - Merge PR
 
 2. Update Worker 2 and Worker 3
@@ -169,7 +169,7 @@ Don't merge all PRs at once. Instead:
    # Resolve any conflicts
    /code-review
    /sync-master
-   /open-pr
+   # Ask Claude: "Create a pull request"
    # Merge PR
    ```
 
@@ -271,20 +271,20 @@ claude-code
 # Worker 1
 /code-review
 /sync-master
-/open-pr
+User: Create a pull request
 # Merge #45
 
 # Update Worker 2 & 3 with main
 # Worker 2
 /sync-master
 /code-review
-/open-pr
+User: Create a pull request
 # Merge #46
 
 # Worker 3
 /sync-master
 /code-review
-/open-pr
+User: Create a pull request
 # Merge #47
 ```
 

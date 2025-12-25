@@ -162,17 +162,19 @@ If conflicts occur, resolve them manually.
 
 ## Creating the Pull Request
 
-Once code review passes and you're synced with main:
+Once code review passes and you're synced with main, ask Claude to create a PR:
 
 ```
-/open-pr
+User: Create a pull request for this branch
 ```
 
-This creates a pull request with:
+Claude will invoke the `open-pr` skill to create a pull request with:
 - Proper title and description
 - Summary of changes
 - Test plan
 - Link to original issue
+
+**Note on Commands vs Skills**: Slash commands (like `/code-review`, `/sync-master`) are pre-defined prompts you invoke directly, while skills (like `open-pr`) are routines implicitly invoked by Claude when you use natural language requests.
 
 ## Complete Workflow Example
 
@@ -200,7 +202,8 @@ git checkout issue-42-add-typescript-support
 git rebase main
 
 # 6. Create PR
-/open-pr
+User: Create a pull request
+[... Claude invokes open-pr skill ...]
 [... PR created: https://github.com/your-repo/pull/123 ...]
 
 # 7. Merge (after approval)
