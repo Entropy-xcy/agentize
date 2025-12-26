@@ -87,12 +87,6 @@ cmd_create() {
         echo "Bootstrapped CLAUDE.md"
     fi
 
-    # Bootstrap .claude as symlink to main repo's .claude
-    if [ -d ".claude" ]; then
-        ln -s "$(pwd)/.claude" "$worktree_path/.claude"
-        echo "Bootstrapped .claude symlink"
-    fi
-
     echo -e "${GREEN}✓ Worktree created successfully${NC}"
     echo ""
     echo "To start working:"
