@@ -200,25 +200,50 @@ Identify unnecessary complexity and propose simpler alternatives."
 
 ### Step 5: Combine Agent Reports
 
-After all three agents complete, combine their outputs into a single debate report:
+After all three agents complete, combine their outputs into a single debate report using direct string concatenation:
 
-**Load template:**
-```bash
-TEMPLATE=".tmp/templates/debate-combined.md"
-```
-
-**Substitute variables in template:**
-- `{{FEATURE_NAME}}`: Extract from FEATURE_DESC (first 5-7 words)
-- `{{TIMESTAMP}}`: Current datetime in format YYYY-MM-DD HH:MM
-- `{{BOLD_PROPOSER_CONTENT}}`: Full output from BOLD_PROPOSAL
-- `{{CRITIQUE_CONTENT}}`: Full output from CRITIQUE_OUTPUT
-- `{{REDUCER_CONTENT}}`: Full output from REDUCER_OUTPUT
-
-**Save combined report:**
+**Generate combined report:**
 ```bash
 TIMESTAMP=$(date +%Y%m%d-%H%M%S)
+FEATURE_NAME=$(echo "$FEATURE_DESC" | head -c 50)
+DATETIME=$(date +"%Y-%m-%d %H:%M")
 OUTPUT_FILE=".tmp/debate-report-$TIMESTAMP.md"
-# Write substituted template to output file
+
+cat > "$OUTPUT_FILE" <<EOF
+# Multi-Agent Debate Report
+
+**Feature**: ${FEATURE_NAME}
+**Generated**: ${DATETIME}
+
+This document combines three perspectives from our multi-agent debate-based planning system:
+1. **Bold Proposer**: Innovative, SOTA-driven approach
+2. **Proposal Critique**: Feasibility analysis and risk assessment
+3. **Proposal Reducer**: Simplified, "less is more" approach
+
+---
+
+## Part 1: Bold Proposer Report
+
+${BOLD_PROPOSAL}
+
+---
+
+## Part 2: Proposal Critique Report
+
+${CRITIQUE_OUTPUT}
+
+---
+
+## Part 3: Proposal Reducer Report
+
+${REDUCER_OUTPUT}
+
+---
+
+## Next Steps
+
+This combined report will be reviewed by an external consensus agent (Codex or Claude Opus) to synthesize a final, balanced implementation plan.
+EOF
 ```
 
 **Extract key summaries for user display:**
@@ -452,21 +477,6 @@ Options:
 ```
 
 Wait for user decision.
-
-### Template Not Found
-
-Combined report template file doesn't exist.
-
-**Response:**
-```
-Error: Combined report template not found.
-
-Expected: .tmp/templates/debate-combined.md
-
-Please ensure the template file exists.
-```
-
-Stop execution.
 
 ### External Consensus Skill Failure
 
