@@ -371,13 +371,52 @@ Create the file `.milestones/issue-{N}-milestone-{M}.md`:
 [Test Status section from Step 4]
 ```
 
-**IMPORTANT**: This milestone document is for local checkpoint tracking only. It should NOT be committed to git (it's already excluded via `.gitignore`).
+**CRITICAL: Local-Only Checkpoint Files**
+
+Milestone documents in `.milestones/` are LOCAL CHECKPOINT FILES ONLY:
+
+- **DO NOT** stage these files: `git add .milestones/` is FORBIDDEN
+- **DO NOT** force-add these files: `git add -f .milestones/*` is FORBIDDEN
+- **DO NOT** commit these files under any circumstances
+- These files are automatically excluded by `.gitignore` when using `git add .`
+
+**Why `.milestones/` files must remain local:**
+1. They are working notes for resuming implementation between sessions
+2. They contain partial progress states not suitable for repository history
+3. `.gitignore` already excludes them to prevent accidental staging
+4. Only completed implementation code/tests/docs should be committed
+
+**Verification:** Before creating any commit, verify staged files:
+```bash
+git diff --cached --name-only
+```
+If you see any `.milestones/` files listed, **STOP** and unstage them:
+```bash
+git restore --staged .milestones/
+```
 
 ### Step 6: Create Milestone Commit
 
 Use the `commit-msg` skill with milestone flag:
 
-**CRITICAL**: Only commit implementation changes (code, tests, docs), NOT the milestone report file.
+**CRITICAL - Pre-Commit Verification:**
+
+Before invoking `commit-msg`, verify what will be staged:
+```bash
+# Stage implementation changes only
+git add .
+
+# Verify staged files (milestone files should NOT appear)
+git diff --cached --name-only
+```
+
+**Requirements:**
+- **MUST stage**: Implementation code, tests, documentation
+- **MUST NOT stage**: `.milestones/issue-{N}-milestone-{M}.md` (local checkpoint only)
+- If `.milestones/` files appear in `git diff --cached`, unstage them immediately:
+  ```bash
+  git restore --staged .milestones/
+  ```
 
 **Invoke commit-msg skill with:**
 - Purpose: milestone
@@ -731,4 +770,4 @@ After milestone skill signals completion, user can invoke `/open-pr` to create a
 
 10. **Test status is gold**: Milestone documents exist primarily to track test progress toward completion
 
-11. **Milestone documents are local-only**: Milestone files in `.milestones/` are excluded from git (via `.gitignore`) and should NEVER be committed. They exist only as local checkpoints for resuming work.
+11. **Milestone documents are local-only**: Milestone files in `.milestones/` are excluded from git (via `.gitignore`) and MUST NEVER be staged or committed. They exist only as local checkpoints for resuming work. Always verify staged files before committing.
