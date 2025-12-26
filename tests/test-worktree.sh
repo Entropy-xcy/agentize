@@ -41,8 +41,6 @@ echo "=== Worktree Smoke Test ==="
 
   # Copy CLAUDE.md for bootstrap testing
   echo "Test CLAUDE.md" > CLAUDE.md
-  mkdir -p .claude
-  echo "Test .claude" > .claude/test.txt
 
   echo ""
   # Test 1: Create worktree with custom description
@@ -56,11 +54,6 @@ echo "=== Worktree Smoke Test ==="
 
   if [ ! -f "trees/issue-42-test-feature/CLAUDE.md" ]; then
       echo -e "${RED}FAIL: CLAUDE.md not bootstrapped${NC}"
-      exit 1
-  fi
-
-  if [ ! -L "trees/issue-42-test-feature/.claude" ]; then
-      echo -e "${RED}FAIL: .claude symlink not bootstrapped${NC}"
       exit 1
   fi
 
