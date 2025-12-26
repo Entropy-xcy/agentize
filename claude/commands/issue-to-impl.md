@@ -130,9 +130,24 @@ gh issue view {issue-number} --json body --jq '.body'
 
 ### Step 6: Create Milestone 1
 
-**Stage files:**
+**Stage files with verification:**
 ```bash
+# Stage all changes
 git add .
+
+# CRITICAL: Verify staged files before proceeding
+git diff --cached --name-only
+```
+
+**Pre-commit checklist:**
+- [ ] Documentation files staged (e.g., README.md, docs/*.md)
+- [ ] Test files staged (e.g., tests/*.sh)
+- [ ] NO `.milestones/` files staged (these are local-only checkpoints)
+
+**If `.milestones/` files appear in staged files:**
+```bash
+# Unstage milestone files immediately
+git restore --staged .milestones/
 ```
 
 **Create milestone document:**
