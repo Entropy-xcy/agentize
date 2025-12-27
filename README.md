@@ -17,7 +17,7 @@ make agentize \
 
 This will create an initial SDK structure in the specified project path.
 For more details of the variables and options available, refer to our
-[usage document](./docs/options.md).
+[usage document](./docs/OPTIONS.md).
 
 ## Core Phylosophy
 
