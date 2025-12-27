@@ -1,14 +1,20 @@
+- This project aims at
+  - Creating a AI-powered SDK to faciliate generic software engineering.
+  - Bootstrapping the development of this SDK using AI.
+  - Thus, changing `.md` files is changing the project core modules themselves.
 - To test whole the project, run `make test`
   - To test a specific module, look at all `*.sh` files in the `tests/` folder.
   - To add a new test, create a new `*.sh` file in the `tests/` folder, and append it to `test-all.sh`.
-- DO NOT use `cd` anywhere!
-  - Use relative paths to this project root only!
-  - `cd` permission is disabled for this CLI.
-  - **Project root**: The directory containing `.git` (or `.git` file for worktrees). For worktrees, each worktree is its own project root with relative paths scoped to that worktree.
+  - However, DO NOT be too obsessed to achieve 100% test coverage (at least for this project).
+    - Many designs are soft and subjective, they shall be tested and evaluated by further dogfooding or real-world usage.
+    - Before creating a test, please think twice if it is subjectively soft or objectively hard.
+- DO NOT use `cd` in CLI synthesized scripts.
+  - Use relative paths to this project root only, and `cd` permission is disabled for this CLI.
+  - However, it is allowed to use `cd` if you create `.sh` scripts committed to this project.
 - `README.md` in each folder shall decribe the folder purpose and organization.
   - If not, please create one!
 - Keep in mind, all the rules developed in this project should be as project-neutral as possible.
-- `docs/draft` folder is for user to draft documents locally, any rules committed to git should avoid mentioning any files in this folder!
+- Use `.tmp` to store your temporary plans or notes.
 - Focus on the rationale of the design itself. DO NOT mention any incremental changes of a history design!
   - **DO NOT**: this design reduces 30% LoC compared to previous design.
   - **DO**: this design simplifies the architecture by providing a unified interface across the modules.
