@@ -23,8 +23,8 @@ This directory contains utility scripts and git hooks for the project.
   - Examples of usage and output
 
 ### Git Worktree Helper
-- `worktree.sh` - Manage git worktrees for parallel agent development
-  - Usage: `./scripts/worktree.sh <command> [args]`
+- `wt-cli.sh` - Worktree management script for parallel agent development
+  - Usage: `./scripts/wt-cli.sh <command> [args]`
   - Commands:
     - `create <issue-number> [description]` - Create worktree with GitHub title fetch
     - `list` - Show all active worktrees
@@ -32,24 +32,25 @@ This directory contains utility scripts and git hooks for the project.
     - `prune` - Clean up stale worktree metadata
   - Features:
     - Automatically fetches issue titles from GitHub via `gh` CLI
-    - Creates branches following `issue-<N>-<title>` convention
+    - Creates branches following `issue-<N>-<title>` convention with explicit hyphen normalization
     - Limits suffix length to 10 characters (configurable via `WORKTREE_SUFFIX_MAX_LENGTH`)
     - Bootstraps `CLAUDE.md` into each worktree
     - Worktrees stored in `trees/` directory (gitignored)
+    - Can be sourced to define `wt()` shell function for cross-project usage
   - Exit codes: 0 (success), 1 (error)
   - Examples:
     ```bash
     # Create worktree fetching title from GitHub issue #42
-    ./scripts/worktree.sh create 42
+    ./scripts/wt-cli.sh create 42
 
     # Create worktree with custom description
-    ./scripts/worktree.sh create 42 add-feature
+    ./scripts/wt-cli.sh create 42 add-feature
 
     # List all worktrees
-    ./scripts/worktree.sh list
+    ./scripts/wt-cli.sh list
 
     # Remove worktree (force removes with uncommitted changes)
-    ./scripts/worktree.sh remove 42
+    ./scripts/wt-cli.sh remove 42
     ```
 
 ### Makefile Utilities

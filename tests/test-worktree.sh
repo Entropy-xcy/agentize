@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
-# Smoke test for scripts/worktree.sh
+# Smoke test for scripts/wt-cli.sh
 # Tests worktree creation, listing, and removal
 
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
-WORKTREE_SCRIPT="$PROJECT_ROOT/scripts/worktree.sh"
+WORKTREE_SCRIPT="$PROJECT_ROOT/scripts/wt-cli.sh"
 
 # Colors for output
 GREEN='\033[0;32m'
@@ -36,14 +36,14 @@ echo "=== Worktree Smoke Test ==="
   git commit -m "Initial commit"
 
   # Copy worktree script to test repo
-  cp "$WORKTREE_SCRIPT" ./worktree.sh
-  chmod +x ./worktree.sh
+  mkdir -p scripts
+  cp "$WORKTREE_SCRIPT" scripts/wt-cli.sh
+  chmod +x scripts/wt-cli.sh
 
   # Copy CLAUDE.md for bootstrap testing
   echo "Test CLAUDE.md" > CLAUDE.md
 
   # Create scripts directory and pre-commit hook for hook installation testing
-  mkdir -p scripts
   cat > scripts/pre-commit << 'EOF'
 #!/usr/bin/env bash
 # Test pre-commit hook
@@ -55,7 +55,7 @@ EOF
   echo ""
   # Test 1: Create worktree with custom description (truncated to 10 chars)
   echo "Test 1: Create worktree with custom description"
-  ./worktree.sh create 42 test-feature
+  ./scripts/wt-cli.sh create 42 test-feature
 
   if [ ! -d "trees/issue-42-test" ]; then
       echo -e "${RED}FAIL: Worktree directory not created (expected: issue-42-test)${NC}"
@@ -72,7 +72,7 @@ EOF
   echo ""
   # Test 2: List worktrees
   echo "Test 2: List worktrees"
-  OUTPUT=$(./worktree.sh list)
+  OUTPUT=$(./scripts/wt-cli.sh list)
   if [[ ! "$OUTPUT" =~ "issue-42-test" ]]; then
       echo -e "${RED}FAIL: Worktree not listed${NC}"
       exit 1
@@ -91,7 +91,7 @@ EOF
   echo ""
   # Test 4: Remove worktree
   echo "Test 4: Remove worktree"
-  ./worktree.sh remove 42
+  ./scripts/wt-cli.sh remove 42
 
   if [ -d "trees/issue-42-test" ]; then
       echo -e "${RED}FAIL: Worktree directory still exists${NC}"
@@ -102,57 +102,57 @@ EOF
   echo ""
   # Test 5: Prune stale metadata
   echo "Test 5: Prune stale metadata"
-  ./worktree.sh prune
+  ./scripts/wt-cli.sh prune
   echo -e "${GREEN}PASS: Prune completed${NC}"
 
   echo ""
   # Test 6: Long title truncates to max length (default 10)
   echo "Test 6: Long title truncates to max length"
-  ./worktree.sh create 99 this-is-a-very-long-suffix-that-should-be-truncated
+  ./scripts/wt-cli.sh create 99 this-is-a-very-long-suffix-that-should-be-truncated
   if [ ! -d "trees/issue-99-this-is-a" ]; then
       echo -e "${RED}FAIL: Long suffix not truncated to 10 chars${NC}"
       exit 1
   fi
-  ./worktree.sh remove 99
+  ./scripts/wt-cli.sh remove 99
   echo -e "${GREEN}PASS: Long suffix truncated${NC}"
 
   echo ""
   # Test 7: Short title preserved
   echo "Test 7: Short title preserved"
-  ./worktree.sh create 88 short
+  ./scripts/wt-cli.sh create 88 short
   if [ ! -d "trees/issue-88-short" ]; then
       echo -e "${RED}FAIL: Short suffix not preserved${NC}"
       exit 1
   fi
-  ./worktree.sh remove 88
+  ./scripts/wt-cli.sh remove 88
   echo -e "${GREEN}PASS: Short suffix preserved${NC}"
 
   echo ""
   # Test 8: Word-boundary trimming
   echo "Test 8: Word-boundary trimming"
-  ./worktree.sh create 77 very-long-name
+  ./scripts/wt-cli.sh create 77 very-long-name
   if [ ! -d "trees/issue-77-very-long" ]; then
       echo -e "${RED}FAIL: Word-boundary trim failed${NC}"
       exit 1
   fi
-  ./worktree.sh remove 77
+  ./scripts/wt-cli.sh remove 77
   echo -e "${GREEN}PASS: Word-boundary trim works${NC}"
 
   echo ""
   # Test 9: Env override changes limit
   echo "Test 9: Env override changes limit"
-  WORKTREE_SUFFIX_MAX_LENGTH=5 ./worktree.sh create 66 test-feature
+  WORKTREE_SUFFIX_MAX_LENGTH=5 ./scripts/wt-cli.sh create 66 test-feature
   if [ ! -d "trees/issue-66-test" ]; then
       echo -e "${RED}FAIL: Env override not applied (expected: issue-66-test)${NC}"
       exit 1
   fi
-  ./worktree.sh remove 66
+  ./scripts/wt-cli.sh remove 66
   echo -e "${GREEN}PASS: Env override works${NC}"
 
   echo ""
   # Test 10: --print-path flag emits machine-readable marker
   echo "Test 10: --print-path flag emits machine-readable marker"
-  OUTPUT=$(./worktree.sh create 55 test --print-path 2>&1)
+  OUTPUT=$(./scripts/wt-cli.sh create 55 test --print-path 2>&1)
   if [[ ! "$OUTPUT" =~ __WT_WORKTREE_PATH__=trees/issue-55-test ]]; then
       echo -e "${RED}FAIL: --print-path did not emit marker${NC}"
       echo "Output: $OUTPUT"
@@ -162,13 +162,13 @@ EOF
       echo -e "${RED}FAIL: Worktree not created with --print-path${NC}"
       exit 1
   fi
-  ./worktree.sh remove 55
+  ./scripts/wt-cli.sh remove 55
   echo -e "${GREEN}PASS: --print-path emits marker and creates worktree${NC}"
 
   echo ""
   # Test 11: Pre-commit hook installed in new worktree (when core.hooksPath not set)
   echo "Test 11: Pre-commit hook installed in new worktree"
-  ./worktree.sh create 56 hook-test
+  ./scripts/wt-cli.sh create 56 hook-test
 
   # Compute worktree git dir
   WORKTREE_GIT_DIR=$(git -C "trees/issue-56-hook-test" rev-parse --git-dir)
@@ -184,8 +184,24 @@ EOF
       exit 1
   fi
 
-  ./worktree.sh remove 56
+  ./scripts/wt-cli.sh remove 56
   echo -e "${GREEN}PASS: Pre-commit hook installed and executable${NC}"
+
+  echo ""
+  # Test 12: Double-dash slugification regression test
+  echo "Test 12: Double-dash slugification (issue #142 regression)"
+  ./scripts/wt-cli.sh create 131 fix--print-path
+  if [ -d "trees/issue-131---print" ]; then
+      echo -e "${RED}FAIL: Triple hyphen created (bug present)${NC}"
+      ./scripts/wt-cli.sh remove 131 || true
+      exit 1
+  fi
+  if [ ! -d "trees/issue-131-fix-print" ]; then
+      echo -e "${RED}FAIL: Expected issue-131-fix-print directory${NC}"
+      exit 1
+  fi
+  ./scripts/wt-cli.sh remove 131
+  echo -e "${GREEN}PASS: Double-dash normalized to single hyphen${NC}"
 
   # Cleanup
   cd /
