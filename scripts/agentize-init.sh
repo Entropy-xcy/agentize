@@ -1,6 +1,11 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 set -e
+
+# Disable glob expansion errors for zsh compatibility
+if [ -n "$ZSH_VERSION" ]; then
+  setopt NULL_GLOB
+fi
 
 # agentize-init.sh - Initialize new project with agentize templates
 #
@@ -33,8 +38,15 @@ fi
 # Set default source path if not specified
 SOURCE_PATH="${AGENTIZE_SOURCE_PATH:-src}"
 
-# Get script directory and project root
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# Get script directory and project root (works in bash and zsh)
+if [ -n "$BASH_SOURCE" ]; then
+  SCRIPT_DIR="${BASH_SOURCE[0]%/*}"
+elif [ -n "$ZSH_VERSION" ]; then
+  SCRIPT_DIR="${0%/*}"
+else
+  SCRIPT_DIR="${0%/*}"
+fi
+SCRIPT_DIR="$(cd "$SCRIPT_DIR" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 echo "Creating SDK for project: $AGENTIZE_PROJECT_NAME"
