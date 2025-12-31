@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 
 set -e
 
@@ -18,6 +18,9 @@ fi
 # Exit codes:
 #   0 - Success
 #   1 - Validation failed or initialization error
+
+# Ensure PATH includes essential directories for restricted environments
+export PATH="/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:$PATH"
 
 # Validate required environment variables
 if [ -z "$AGENTIZE_PROJECT_PATH" ]; then
