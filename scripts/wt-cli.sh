@@ -461,7 +461,7 @@ cmd_create() {
     # Launch claude unless --no-agent flag is set
     if [ "$no_agent" = false ]; then
         cd "$worktree_path"
-        claude
+        claude "/issue-to-impl ${issue_number}"
     fi
 }
 
