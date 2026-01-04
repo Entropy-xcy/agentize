@@ -209,13 +209,24 @@ echo ${arr[0]}  # a in both
 declare -A map 2>/dev/null || typeset -A map  # Works in both
 map[key1]="value1"
 echo ${map[key1]}
+
+## PATH Variable
+```zsh
+local path="screwed"
+echo $PATH # screwed
 ```
+
+In zsh, `$path` is an array view of the PATH variable, which can lead to confusion.
+In bash, `$path` is just a regular variable.
+
+Solution: Always use `$PATH` for environment variable access, and avoid using `$path` as variable name!
 
 ## Key Recommendations
 
-1. Use #!/bin/bash as shebang (more portable)
+1. Use `#!/bin/bash` as shebang (more portable)
 2. Add setopt KSH_ARRAYS at the top if you must support zsh
-3. Always quote variables: "$var" not $var
-4. Use "${arr[@]}" for array expansion
+3. Always quote variables: `"$var"` not `$var`
+4. Use `"${arr[@]}"` for array expansion
 5. Use the script path template for reliable path detection
 6. Use find instead of complex globs for portability
+7. Avoid using `$path` as in zsh, it is different view of the sameting, `$PATH`
