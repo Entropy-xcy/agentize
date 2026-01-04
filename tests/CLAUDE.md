@@ -1,4 +1,4 @@
-## Test Registration
+# Test Registration
 
 When adding a new test:
 
@@ -17,9 +17,18 @@ When adding a new test:
    "Bash(tests/<category>/test-<feature>-<case>.sh)"
    ```
 
-## Helper Scripts
+Both `tests/sdk/` and `tests/cli/` are emulating how users would interact with the SDK and CLI.
+DO NOT try to modify `setup.sh` or `session-init.sh` to accomodate the test cases.
+Instead, modify the CLI and SDK code or tests themselves to pass the tests.
 
-Helper scripts (`tests/common.sh`, `tests/helpers-*.sh`) are not tests themselves and should NOT be added to `test-all.sh` or executed directly. They provide shared functionality for test scripts:
+Keep in mind that `AGENTIZE_HOME` is set to point to the current work tree you are testing against!
+`PROJECT_ROOT` is set to the root of the repository using agentize CLI to initialize, update, and
+develop!
+
+# Helper Scripts
+
+Helper scripts (`tests/common.sh`, `tests/helpers-*.sh`) are not tests themselves and should NOT be
+added to `test-all.sh` or executed directly. They provide shared functionality for test scripts:
 
 - `common.sh` - PROJECT_ROOT detection, test result helpers, resource management
 - `helpers-worktree.sh` - Worktree test setup/cleanup
