@@ -515,7 +515,6 @@ cmd_create() {
 
         # Build Claude command with optional --dangerously-skip-permissions flag
         local claude_cmd="claude"
-        local yolo_mode=""
         if [ "$yolo_mode" = true ]; then
             yolo_mode="--dangerously-skip-permissions"
             echo "${YELLOW}⚠️ YOLO mode enabled! Bravely skipping permission asks!${NC}"
