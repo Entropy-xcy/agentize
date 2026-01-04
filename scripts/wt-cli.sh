@@ -518,6 +518,7 @@ cmd_create() {
         local yolo_mode=""
         if [ "$yolo_mode" = true ]; then
             yolo_mode="--dangerously-skip-permissions"
+            echo "${YELLOW}⚠️ YOLO mode enabled! Bravely skipping permission asks!${NC}"
         fi
 
         ${claude_cmd} ${yolo_mode} "/issue-to-impl ${issue_number}"
