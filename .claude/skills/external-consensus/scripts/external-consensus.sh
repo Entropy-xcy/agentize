@@ -6,12 +6,12 @@
 # debate report using an external AI reviewer (Codex or Claude Opus).
 #
 # Usage:
-#   ./external-consensus.sh <issue-number|debate-report-path> [feature-name] [feature-description]
+#   ./external-consensus.sh <path-to-report1> <path-to-report2> <path-to-report3>
 #
 # Arguments:
-#   issue-number|debate-report-path   Issue number (resolves to .tmp/issue-{N}-debate.md) OR path to debate report (required)
-#   feature-name                      Short name for the feature (optional, extracted from report if omitted)
-#   feature-description               Brief description (optional, extracted from report if omitted)
+#   path-to-report1   Path to first agent report (e.g., bold-proposer output) (required)
+#   path-to-report2   Path to second agent report (e.g., critique output) (required)
+#   path-to-report3   Path to third agent report (e.g., reducer output) (required)
 #
 # Output:
 #   Prints the path to the generated consensus plan file on stdout
@@ -27,59 +27,46 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SKILL_DIR="$(dirname "$SCRIPT_DIR")"
 
 # Validate input arguments
-if [ $# -lt 1 ]; then
-    echo "Error: Issue number or debate report path is required" >&2
-    echo "Usage: $0 <issue-number|debate-report-path> [feature-name] [feature-description]" >&2
+if [ $# -ne 3 ]; then
+    echo "Error: Exactly 3 report paths are required" >&2
+    echo "Usage: $0 <path-to-report1> <path-to-report2> <path-to-report3>" >&2
     exit 1
 fi
 
-# Detect issue-number mode vs path mode
-if [[ "$1" =~ ^[0-9]+$ ]]; then
-    # Issue-number mode: resolve to .tmp/issue-{N}-debate.md
-    ISSUE_NUMBER="$1"
-    DEBATE_REPORT_PATH=".tmp/issue-${ISSUE_NUMBER}-debate.md"
-    shift
-else
-    # Path mode: use provided path
-    DEBATE_REPORT_PATH="$1"
-    shift
-fi
+# Accept 3 report paths
+REPORT1_PATH="$1"
+REPORT2_PATH="$2"
+REPORT3_PATH="$3"
 
-FEATURE_NAME="${1:-}"
-FEATURE_DESCRIPTION="${2:-}"
-
-# Validate debate report exists
-if [ ! -f "$DEBATE_REPORT_PATH" ]; then
-    echo "Error: Debate report file not found: $DEBATE_REPORT_PATH" >&2
-    exit 1
-fi
+# Validate all report files exist
+for REPORT_PATH in "$REPORT1_PATH" "$REPORT2_PATH" "$REPORT3_PATH"; do
+    if [ ! -f "$REPORT_PATH" ]; then
+        echo "Error: Report file not found: $REPORT_PATH" >&2
+        exit 1
+    fi
+done
 
 # Generate timestamp for temp files
 TIMESTAMP=$(date +%Y%m%d-%H%M%S)
 
-# Extract issue number from debate report filename if not already set (path mode)
-if [ -z "$ISSUE_NUMBER" ]; then
-    DEBATE_REPORT_BASENAME=$(basename "$DEBATE_REPORT_PATH")
-    if [[ "$DEBATE_REPORT_BASENAME" =~ ^issue-([0-9]+)- ]]; then
-        ISSUE_NUMBER="${BASH_REMATCH[1]}"
-    fi
+# Extract issue number from first report filename
+REPORT1_BASENAME=$(basename "$REPORT1_PATH")
+ISSUE_NUMBER=""
+if [[ "$REPORT1_BASENAME" =~ ^issue-([0-9]+)- ]]; then
+    ISSUE_NUMBER="${BASH_REMATCH[1]}"
 fi
 
-# Extract feature name and description from debate report if not provided
+# Extract feature name from first report
+# Try to extract from **Feature**: line (standard debate reports)
+FEATURE_NAME=$(grep "^\*\*Feature\*\*:" "$REPORT1_PATH" | head -1 | sed 's/^\*\*Feature\*\*: //' || echo "")
+
+# If not found, try **Title**: line (refinement debate reports)
 if [ -z "$FEATURE_NAME" ]; then
-    # Try to extract from **Feature**: line (standard debate reports)
-    FEATURE_NAME=$(grep "^\*\*Feature\*\*:" "$DEBATE_REPORT_PATH" | head -1 | sed 's/^\*\*Feature\*\*: //' || echo "")
-
-    # If not found, try **Title**: line (refinement debate reports)
-    if [ -z "$FEATURE_NAME" ]; then
-        FEATURE_NAME=$(grep "^\*\*Title\*\*:" "$DEBATE_REPORT_PATH" | head -1 | sed 's/^\*\*Title\*\*: //' | sed 's/^\[draft\]\[plan\]\[[^]]*\]: //' || echo "Unknown Feature")
-    fi
+    FEATURE_NAME=$(grep "^\*\*Title\*\*:" "$REPORT1_PATH" | head -1 | sed 's/^\*\*Title\*\*: //' | sed 's/^\[draft\]\[plan\]\[[^]]*\]: //' || echo "Unknown Feature")
 fi
 
-if [ -z "$FEATURE_DESCRIPTION" ]; then
-    # Use feature name as description if not provided
-    FEATURE_DESCRIPTION="$FEATURE_NAME"
-fi
+# Use feature name as description
+FEATURE_DESCRIPTION="$FEATURE_NAME"
 
 # Prepare input prompt file and consensus file with issue-based naming if available
 if [ -n "$ISSUE_NUMBER" ]; then
@@ -103,8 +90,55 @@ if [ ! -f "$PROMPT_TEMPLATE_PATH" ]; then
     exit 1
 fi
 
-# Load debate report content
-DEBATE_REPORT_CONTENT=$(cat "$DEBATE_REPORT_PATH")
+# Prepare debate report file path
+if [ -n "$ISSUE_NUMBER" ]; then
+    DEBATE_REPORT_FILE=".tmp/issue-${ISSUE_NUMBER}-debate.md"
+else
+    DEBATE_REPORT_FILE=".tmp/debate-report-${TIMESTAMP}.md"
+fi
+
+# Combine all 3 reports into a single debate report file
+cat > "$DEBATE_REPORT_FILE" <<EOF
+# Multi-Agent Debate Report
+
+**Feature**: $FEATURE_NAME
+**Generated**: $(date +"%Y-%m-%d %H:%M")
+
+This document combines three perspectives from our multi-agent debate-based planning system:
+1. **Report 1**: $(basename "$REPORT1_PATH")
+2. **Report 2**: $(basename "$REPORT2_PATH")
+3. **Report 3**: $(basename "$REPORT3_PATH")
+
+---
+
+## Part 1: $(basename "$REPORT1_PATH")
+
+$(cat "$REPORT1_PATH")
+
+---
+
+## Part 2: $(basename "$REPORT2_PATH")
+
+$(cat "$REPORT2_PATH")
+
+---
+
+## Part 3: $(basename "$REPORT3_PATH")
+
+$(cat "$REPORT3_PATH")
+
+---
+
+## Next Steps
+
+This combined report will be reviewed by an external consensus agent (Codex or Claude Opus) to synthesize a final, balanced implementation plan.
+EOF
+
+# Load the combined debate report content for use in external review
+DEBATE_REPORT_CONTENT=$(cat "$DEBATE_REPORT_FILE")
+
+echo "Combined debate report saved to: $DEBATE_REPORT_FILE" >&2
+echo "" >&2
 
 # Create temporary file for substitution
 TEMP_FILE=$(mktemp)

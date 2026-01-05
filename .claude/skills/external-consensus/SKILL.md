@@ -114,17 +114,20 @@ When invoked, this skill:
 
 ## Inputs
 
-This skill accepts either:
-- **Issue number**: GitHub issue number (e.g., `42`). Resolves to `.tmp/issue-{N}-debate.md`
-- **Combined report file**: Path to debate report (e.g., `.tmp/issue-42-debate.md`)
+This skill requires exactly 3 agent report file paths:
+- **Report 1**: Path to first agent report (e.g., `.tmp/issue-42-bold-proposal.md`)
+- **Report 2**: Path to second agent report (e.g., `.tmp/issue-42-critique.md`)
+- **Report 3**: Path to third agent report (e.g., `.tmp/issue-42-reducer.md`)
 
-Optional arguments:
-- **Feature name**: Short name for the feature (auto-extracted if not provided)
-- **Feature description**: Brief description of what user wants to build (auto-extracted if not provided)
+The script automatically:
+- Extracts feature name from the first report (from `**Feature**:` or `**Title**:` lines)
+- Extracts issue number from first report filename (if it follows `issue-{N}-*` pattern)
+- Combines all 3 reports into a single debate report file
 
 ## Outputs
 
-- **Consensus plan file**: `.tmp/issue-{N}-consensus.md` (if debate report follows `issue-{N}-debate.md` pattern) or `.tmp/consensus-plan-{timestamp}.md` (fallback) with final implementation plan
+- **Combined debate report**: `.tmp/issue-{N}-debate.md` (if first report has issue number) or `.tmp/debate-report-{timestamp}.md` (fallback) with all 3 reports combined
+- **Consensus plan file**: `.tmp/issue-{N}-consensus.md` (if debate report has issue number) or `.tmp/consensus-plan-{timestamp}.md` (fallback) with final implementation plan
 - **Plan summary**: Key decisions and LOC estimate
 
 ## Implementation Workflow
@@ -133,46 +136,36 @@ Optional arguments:
 
 ### Step 1: Invoke External Consensus Script
 
-Direct invocation - the script handles everything and outputs summary:
+Direct invocation with 3 report paths - the script handles everything and outputs summary:
 
 ```bash
-# Issue-number mode: script resolves .tmp/issue-{N}-debate.md
-.claude/skills/external-consensus/scripts/external-consensus.sh 42
-
-# Issue-number mode with explicit feature name and description (optional)
+# Standard invocation: pass 3 report file paths
 .claude/skills/external-consensus/scripts/external-consensus.sh \
-    42 \
-    "Review-Standard Simplification" \
-    "Simplify skill while adding scoring"
-
-# Path mode: traditional invocation (backward compatible)
-.claude/skills/external-consensus/scripts/external-consensus.sh .tmp/issue-42-debate.md
-
-# Path mode with explicit feature name and description (optional)
-.claude/skills/external-consensus/scripts/external-consensus.sh \
-    .tmp/issue-42-debate.md \
-    "Review-Standard Simplification" \
-    "Simplify skill while adding scoring"
+    .tmp/issue-42-bold-proposal.md \
+    .tmp/issue-42-critique.md \
+    .tmp/issue-42-reducer.md
 ```
 
 **Script automatically:**
-1. Validates debate report exists
-2. Extracts feature name/description from report if not provided
-3. Loads and processes prompt template with variable substitution
-4. Checks if Codex is available (prefers Codex with xhigh reasoning)
-5. Falls back to Claude Opus if Codex unavailable
-6. Invokes external AI with appropriate configuration:
+1. Validates all 3 report files exist
+2. Extracts issue number from first report filename (if it follows `issue-{N}-*` pattern)
+3. Extracts feature name from first report (from `**Feature**:` or `**Title**:` lines)
+4. Combines all 3 reports into a single debate report file (`.tmp/issue-{N}-debate.md` or `.tmp/debate-report-{timestamp}.md`)
+5. Loads and processes prompt template with variable substitution
+6. Checks if Codex is available (prefers Codex with xhigh reasoning)
+7. Falls back to Claude Opus if Codex unavailable
+8. Invokes external AI with appropriate configuration:
    - **Codex**: `gpt-5.2-codex`, read-only sandbox, web search enabled, xhigh reasoning (30 min)
    - **Claude**: Opus model, read-only tools, bypassPermissions (30 min)
-7. Saves consensus plan to `.tmp/consensus-plan-{timestamp}.md`
-8. Validates output and extracts summary information
-9. Outputs consensus file path on stdout (last line)
-10. Displays summary information on stderr for user review
+9. Saves consensus plan to `.tmp/issue-{N}-consensus.md` or `.tmp/consensus-plan-{timestamp}.md`
+10. Validates output and extracts summary information
+11. Outputs consensus file path on stdout (last line)
+12. Displays summary information on stderr for user review
 
 **Required inputs:**
-- Issue number OR path to combined debate report (required)
-- Feature name (optional, auto-extracted from report)
-- Feature description (optional, auto-extracted from report)
+- Path to first agent report (required)
+- Path to second agent report (required)
+- Path to third agent report (required)
 
 **No environment variables needed** - just invoke the script and review the output
 
@@ -251,21 +244,15 @@ The script performs validation and summary extraction internally - no additional
 
 The `external-consensus.sh` script handles most error scenarios internally. Here are the main error cases:
 
-### Combined Report Not Found
+### Report Files Not Found
 
-The script validates that the debate report file exists. If not, it exits with:
+The script validates that all 3 report files exist. If any file is missing, it exits with:
 
-**Issue-number mode:**
 ```
-Error: Debate report file not found: .tmp/issue-{N}-debate.md
-```
-
-**Path mode:**
-```
-Error: Debate report file not found: {file_path}
+Error: Report file not found: {file_path}
 ```
 
-**Solution**: Ensure the debate-based-planning skill completed successfully and generated the report.
+**Solution**: Ensure all 3 agent reports were generated successfully by the multi-agent debate workflow.
 
 ### Codex CLI Unavailable (Auto-fallback to Claude)
 
@@ -310,14 +297,17 @@ The plan is available at: {file_path}
 ### Example 1: Successful Consensus with Codex
 
 **Input:**
-```
-Combined report: .tmp/issue-42-debate.md
-Feature name: "JWT Authentication"
-Feature description: "Add user authentication with JWT tokens"
+```bash
+.claude/skills/external-consensus/scripts/external-consensus.sh \
+    .tmp/issue-42-bold-proposal.md \
+    .tmp/issue-42-critique.md \
+    .tmp/issue-42-reducer.md
 ```
 
 **Execution:**
 ```
+Combined debate report saved to: .tmp/issue-42-debate.md
+
 Using Codex (gpt-5.2-codex) for external consensus review...
 
 [Codex executes with advanced features:]
@@ -359,13 +349,19 @@ Next step: Review plan and create GitHub issue with open-issue skill.
 **Scenario:** Feature requires external research for SOTA patterns.
 
 **Input:**
+```bash
+.claude/skills/external-consensus/scripts/external-consensus.sh \
+    .tmp/issue-15-bold-proposal.md \
+    .tmp/issue-15-critique.md \
+    .tmp/issue-15-reducer.md
 ```
-Feature name: "Real-time Collaboration"
-Feature description: "Add multi-user real-time editing with CRDT"
-```
+
+(First report contains: **Feature**: Real-time Collaboration with CRDT)
 
 **Codex behavior:**
 ```
+Combined debate report saved to: .tmp/issue-15-debate.md
+
 Using Codex (gpt-5.2-codex) for external consensus review...
 
 [Web search queries executed:]

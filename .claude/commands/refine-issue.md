@@ -112,7 +112,7 @@ ISSUE_STATE=$(echo "$ISSUE_JSON" | jq -r '.state')
 
 **Save original plan:**
 ```bash
-ORIGINAL_PLAN_FILE=".tmp/issue-${ISSUE_NUMBER}-original-$(date +%Y%m%d-%H%M%S).md"
+ORIGINAL_PLAN_FILE=".tmp/issue-${ISSUE_NUMBER}-original.md"
 echo "$ISSUE_BODY" > "$ORIGINAL_PLAN_FILE"
 ```
 
@@ -207,87 +207,34 @@ Identify unnecessary complexity and propose simpler alternatives."
 - Generate filename: `REDUCER_FILE=".tmp/reducer-output-$(date +%Y%m%d-%H%M%S).md"`
 - Save reducer agent's response to `$REDUCER_FILE`
 
-### Step 5: Combine Agent Reports
-
-After all three agents complete, combine their outputs into a single debate report.
-
-**IMPORTANT:** Use `.tmp/issue-{N}-debate.md` naming for the debate report to enable issue-number invocation of external-consensus.
-
-**Generate combined report:**
-```bash
-DATETIME=$(date +"%Y-%m-%d %H:%M")
-DEBATE_REPORT_FILE=".tmp/issue-${ISSUE_NUMBER}-debate.md"
-
-{
-    echo "# Multi-Agent Debate Report (Refinement)"
-    echo ""
-    echo "**Original Issue**: #${ISSUE_NUMBER}"
-    echo "**Title**: ${ISSUE_TITLE}"
-    echo "**Generated**: $DATETIME"
-    if [ -n "$REFINEMENT_INSTRUCTIONS" ]; then
-        echo "**Refinement Focus**: $REFINEMENT_INSTRUCTIONS"
-    fi
-    echo ""
-    echo "This document combines three perspectives from our multi-agent debate-based refinement system:"
-    echo "1. **Bold Proposer**: Innovative improvements and missing components"
-    echo "2. **Proposal Critique**: Feasibility analysis and risk assessment"
-    echo "3. **Proposal Reducer**: Simplified, \"less is more\" approach"
-    echo ""
-    echo "---"
-    echo ""
-    echo "## Part 1: Bold Proposer Report"
-    echo ""
-    cat "$BOLD_FILE"
-    echo ""
-    echo "---"
-    echo ""
-    echo "## Part 2: Proposal Critique Report"
-    echo ""
-    cat "$CRITIQUE_FILE"
-    echo ""
-    echo "---"
-    echo ""
-    echo "## Part 3: Proposal Reducer Report"
-    echo ""
-    cat "$REDUCER_FILE"
-    echo ""
-    echo "---"
-    echo ""
-    echo "## Next Steps"
-    echo ""
-    echo "This combined report will be reviewed by an external consensus agent to synthesize a final, balanced refinement plan."
-} > "$DEBATE_REPORT_FILE.tmp"
-mv "$DEBATE_REPORT_FILE.tmp" "$DEBATE_REPORT_FILE"
-```
-
-**Note on filename consistency:** The debate report uses `issue-${ISSUE_NUMBER}-debate.md` naming to enable issue-number invocation of external-consensus. Agent report files use timestamps to avoid conflicts across multiple refinements.
-
-### Step 6: Invoke External Consensus Skill
+### Step 5: Invoke External Consensus Skill
 
 **REQUIRED SKILL CALL:**
 
-Use the Skill tool to invoke the external-consensus skill with issue number:
+Use the Skill tool to invoke the external-consensus skill with the 3 report file paths:
 
 ```
 Skill tool parameters:
   skill: "external-consensus"
-  args: "{ISSUE_NUMBER}"
+  args: "{BOLD_FILE} {CRITIQUE_FILE} {REDUCER_FILE}"
 ```
 
-Note: The skill will resolve `.tmp/issue-{N}-debate.md` from the issue number (created in Step 5).
+**Note:** The external-consensus skill will:
+1. Combine the 3 agent reports into a single debate report (saved as `.tmp/issue-{N}-debate.md`)
+2. Process the combined report through external AI review (Codex or Claude Opus)
 
 **What this skill does:**
-1. Reads the combined debate report from `DEBATE_REPORT_FILE`
+1. Combines the 3 agent reports into a single debate report (saved as `.tmp/issue-{N}-debate.md`)
 2. Prepares external review prompt using `.claude/skills/external-consensus/external-review-prompt.md`
 3. Invokes Codex CLI (preferred) or Claude API (fallback) for consensus synthesis
 4. Parses and validates the consensus plan structure
-5. Saves consensus plan to `.tmp/consensus-plan-{timestamp}.md`
+5. Saves consensus plan to `.tmp/issue-{N}-consensus.md`
 6. Returns summary and file path
 
 **Extract:**
 - Save the consensus plan file path as `CONSENSUS_PLAN_FILE`
 
-### Step 7: Update GitHub Issue
+### Step 6: Update GitHub Issue
 
 Update the issue with the refined plan:
 

@@ -242,79 +242,27 @@ Identify unnecessary complexity and propose simpler alternatives."
 - Critique: Risk analysis and feasibility assessment of Bold's proposal
 - Reducer: Simplified version of Bold's proposal with complexity analysis
 
-### Step 6: Combine Agent Reports
-
-After all three agents complete, **DO NOT** even try to read their outputs!
-Use `cat` and `heredoc` to combine their outputs into a single debate report
-as below.
-
-**IMPORTANT:** Use `.tmp/issue-{N}-debate.md` naming for the debate report to enable issue-number invocation of external-consensus.
-
-**Generate combined report:**
-```bash
-FEATURE_NAME=$(echo "$FEATURE_DESC" | head -c 50)
-DATETIME=$(date +"%Y-%m-%d %H:%M")
-DEBATE_REPORT_FILE=".tmp/issue-${ISSUE_NUMBER}-debate.md"
-
-{
-    echo "# Multi-Agent Debate Report"
-    echo ""
-    echo "**Feature**: $FEATURE_NAME"
-    echo "**Generated**: $DATETIME"
-    echo ""
-    echo "This document combines three perspectives from our multi-agent debate-based planning system:"
-    echo "1. **Bold Proposer**: Innovative, SOTA-driven approach"
-    echo "2. **Proposal Critique**: Feasibility analysis and risk assessment"
-    echo "3. **Proposal Reducer**: Simplified, \"less is more\" approach"
-    echo ""
-    echo "---"
-    echo ""
-    echo "## Part 1: Bold Proposer Report"
-    echo ""
-    cat "$BOLD_FILE"
-    echo ""
-    echo "---"
-    echo ""
-    echo "## Part 2: Proposal Critique Report"
-    echo ""
-    cat "$CRITIQUE_FILE"
-    echo ""
-    echo "---"
-    echo ""
-    echo "## Part 3: Proposal Reducer Report"
-    echo ""
-    cat "$REDUCER_FILE"
-    echo ""
-    echo "---"
-    echo ""
-    echo "## Next Steps"
-    echo ""
-    echo "This combined report will be reviewed by an external consensus agent (Codex or Claude Opus) to synthesize a final, balanced implementation plan."
-} > "$DEBATE_REPORT_FILE.tmp"
-mv "$DEBATE_REPORT_FILE.tmp" "$DEBATE_REPORT_FILE"
-```
-
-**Note on filename consistency:** All filenames use the `issue-${ISSUE_NUMBER}-` prefix to enable tracing of artifacts back to the GitHub issue. This also ensures all artifacts for a given issue are grouped together in `.tmp/` directory.
-
-### Step 7: Invoke External Consensus Skill
+### Step 6: Invoke External Consensus Skill
 
 **REQUIRED SKILL CALL:**
 
-Use the Skill tool to invoke the external-consensus skill with issue number:
+Use the Skill tool to invoke the external-consensus skill with the 3 report file paths:
 
 ```
 Skill tool parameters:
   skill: "external-consensus"
-  args: "{ISSUE_NUMBER}"
+  args: "{BOLD_FILE} {CRITIQUE_FILE} {REDUCER_FILE}"
 ```
 
-Note: The skill will resolve `.tmp/issue-{N}-debate.md` from the issue number (created in Step 6).
+**Note:** The external-consensus skill will:
+1. Combine the 3 agent reports into a single debate report (saved as `.tmp/issue-{N}-debate.md`)
+2. Process the combined report through external AI review (Codex or Claude Opus)
 
 NOTE: This consensus synthesis can take long time depending on the complexity of the debate report.
 Give it 30 minutes timeout to complete, which is mandatory for **ALL DEBATES**!
 
 **What this skill does:**
-1. Reads the combined debate report from `DEBATE_REPORT_FILE`
+1. Combines the 3 agent reports into a single debate report (saved as `.tmp/issue-{N}-debate.md`)
 2. Prepares external review prompt using `.claude/skills/external-consensus/external-review-prompt.md`
 3. Invokes Codex CLI (preferred) or Claude API (fallback) for consensus synthesis
 4. Parses and validates the consensus plan structure
@@ -342,7 +290,7 @@ Consensus plan saved to: {CONSENSUS_PLAN_FILE}
 **Extract:**
 - Save the consensus plan file path as `CONSENSUS_PLAN_FILE`
 
-### Step 8: Update Placeholder Issue with Consensus Plan
+### Step 7: Update Placeholder Issue with Consensus Plan
 
 **REQUIRED SKILL CALL:**
 
@@ -372,7 +320,7 @@ To refine: /refine-issue ${ISSUE_NUMBER}
 To implement: /issue-to-impl ${ISSUE_NUMBER}
 ```
 
-### Step 9: Add "plan" Label to Finalize Issue
+### Step 8: Add "plan" Label to Finalize Issue
 
 **REQUIRED BASH COMMAND:**
 
