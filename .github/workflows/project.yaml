@@ -83,12 +83,14 @@ jobs:
           GH_TOKEN: ${{ secrets.ADD_TO_PROJECT_PAT }}
         run: |
           linked_issues='${{ steps.get-issues.outputs.linked_issues }}'
+          repo_owner="${{ github.repository_owner }}"
+          repo_name="${{ github.event.repository.name }}"
 
           # Process each linked issue
           echo "$linked_issues" | jq -c '.[]' | while read -r issue; do
             issue_number=$(echo "$issue" | jq -r '.number')
             echo "Closing issue #$issue_number..."
-            gh issue close $issue_number --reason "completed"
+            gh issue close $issue_number --repo "$repo_owner/$repo_name" --reason "completed"
             echo "  ✅ Issue #$issue_number closed"
           done
 
