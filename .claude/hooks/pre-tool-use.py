@@ -60,6 +60,9 @@ PERMISSION_RULES = {
         ('Bash', r'^mkdir'),
         ('Bash', r'^make (all|build|check|lint|setup|test)'),
 
+        # Bash - Test execution (project-neutral convention)
+        ('Bash', r'^(\./)?tests/.*\.sh'),
+
         # Bash - Environment
         ('Bash', r'^module load'),
 
@@ -86,6 +89,7 @@ PERMISSION_RULES = {
         ('Bash', r'^git add'),
         ('Bash', r'^git push'),
         ('Bash', r'^git commit'),
+
     ],
     'deny': [
         # Destructive operations
@@ -148,21 +152,20 @@ def ask_haiku_first(tool, target):
         log_tool_decision(hook_input.get('session_id', 'unknown'), '', tool, target, f'ERROR transcript: {str(e)}')
         return 'ask'
 
-    prompt = f'''You are a judger for the below Claude Code tool usage.
-Determine the risk of implicitly automatically run this command below.
-Give 'allow' for low or no-risk cases.
-Give 'deny' for absolutely high risk cases.
-Give 'ask' for what you are not sure.
-Do not output anything else.
-
-Here is context of the tool usage:
-{transcript}
-
-Besides the tool itself, if it is a script execution, consider to look into the script content too.
+    prompt = f'''Evaluate this Claude Code tool call for automatic permission in hands-off mode.
 
 Tool: {tool}
 Target: {target}
-'''
+
+Risk categories:
+- allow: Read-only operations, file search, git status, safe builds, test runs
+- deny: Destructive ops (rm -rf, git reset --hard), secrets access, sudo, force push
+- ask: Unclear intent, external API writes, untrusted script execution
+
+Context (last transcript entry):
+{transcript}
+
+Reply with allow, deny, or ask as the first word. Brief reasoning is optional.'''
 
     try:
         result = subprocess.check_output(
@@ -171,18 +174,20 @@ Target: {target}
             text=True,
             timeout=30
         )
-        full_response = result.strip()
-        # Extract only the first word from the response
-        decision = full_response.split()[0].lower() if full_response else ''
+        full_response = result.strip().lower()
 
         # Log the full Haiku response for debugging
         log_tool_decision(hook_input['session_id'], transcript, tool, target, f'HAIKU: {full_response}')
 
-        if decision in ['allow', 'deny', 'ask']:
-            return decision
+        # Check first word using startswith (handles "allow.", "allow because...", etc.)
+        if full_response.startswith('allow'):
+            return 'allow'
+        elif full_response.startswith('deny'):
+            return 'deny'
+        elif full_response.startswith('ask'):
+            return 'ask'
         else:
-            # Log invalid output error
-            log_tool_decision(hook_input['session_id'], transcript, tool, target, f'ERROR invalid_output: {decision}')
+            log_tool_decision(hook_input['session_id'], transcript, tool, target, f'ERROR invalid_output: {full_response[:50]}')
             return 'ask'
     except subprocess.TimeoutExpired as e:
         log_tool_decision(hook_input['session_id'], transcript, tool, target, f'ERROR timeout: {str(e)}')
@@ -200,6 +205,40 @@ def normalize_bash_command(command):
     command = strip_shell_prefixes(command)
     return command
 
+def verify_force_push_to_own_branch(command):
+    """Check if force push targets the current branch (issue-* branches only).
+
+    Returns 'allow' if pushing to own issue branch, 'deny' otherwise.
+    This prevents accidentally/maliciously force pushing to others' branches.
+    """
+    # Match: git push --force/--force-with-lease/-f origin/upstream issue-*
+    match = re.match(r'^git push (--force-with-lease|--force|-f) (origin|upstream) (issue-\S+)', command)
+    if not match:
+        return None  # Not a force push to issue branch
+
+    target_branch = match.group(3)
+
+    try:
+        current_branch = subprocess.check_output(
+            ['git', 'branch', '--show-current'],
+            text=True,
+            timeout=5
+        ).strip()
+
+        # Extract issue number from both branches (issue-42 or issue-42-title)
+        target_issue = re.match(r'^issue-(\d+)', target_branch)
+        current_issue = re.match(r'^issue-(\d+)', current_branch)
+
+        if target_issue and current_issue:
+            if target_issue.group(1) == current_issue.group(1):
+                return 'allow'
+            else:
+                return 'deny'  # Pushing to different issue's branch
+
+        return 'deny'  # Current branch is not an issue branch
+    except Exception:
+        return None  # Can't verify, let other rules handle it
+
 def check_permission(tool, target, raw_target):
     """
     Check permission for tool usage against PERMISSION_RULES.
@@ -213,6 +252,12 @@ def check_permission(tool, target, raw_target):
         raw_target: Original target (for logging/Haiku context)
     """
     try:
+        # Special check: force push to issue branches requires current branch verification
+        if tool == 'Bash':
+            force_push_result = verify_force_push_to_own_branch(target)
+            if force_push_result is not None:
+                return (force_push_result, 'force-push-verify')
+
         # Check rules in priority order: deny → ask → allow
         for decision in ['deny', 'ask', 'allow']:
             for rule_tool, pattern in PERMISSION_RULES.get(decision, []):
