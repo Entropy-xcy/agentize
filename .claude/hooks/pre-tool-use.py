@@ -294,19 +294,30 @@ def handle_callback_query(token: str, callback_query: Dict[str, Any], expected_m
 
 
 def edit_message_result(token: str, chat_id: str, message_id: int, tool: str,
-                        decision: str, session_id: str = 'unknown') -> None:
+                        target: str, decision: str, session_id: str = 'unknown') -> None:
     """Edit the original approval message to show the decision result.
+
+    Preserves original tool/target info and updates status line.
 
     Args:
         token: Bot API token
         chat_id: Chat ID where the message was sent
         message_id: ID of the message to edit
         tool: Tool name for display
+        target: Target string for display (truncated)
         decision: 'allow' or 'deny'
         session_id: Session ID for logging
     """
     emoji = '✅' if decision == 'allow' else '❌'
-    result_text = f"{emoji} {'Allowed' if decision == 'allow' else 'Denied'}: {escape_html(tool)}"
+    status = 'Allowed' if decision == 'allow' else 'Denied'
+
+    # Preserve original message content with updated status
+    result_text = (
+        f"{emoji} {status}\n\n"
+        f"Tool: <code>{escape_html(tool)}</code>\n"
+        f"Target: <code>{escape_html(target)}</code>\n"
+        f"Session: {session_id[:SESSION_ID_DISPLAY_LEN]}"
+    )
 
     tg_api_request(token, 'editMessageText', {
         'chat_id': chat_id,
@@ -476,7 +487,7 @@ def telegram_approval_decision(tool: str, target: str, session_id: str, raw_targ
                     log_tool_decision(session_id, '', tool, raw_target,
                                       f'TG_{decision.upper()} user_id={user_id} via=button')
                     # Edit the original message to show result
-                    edit_message_result(token, chat_id, message_id, tool, decision, session_id)
+                    edit_message_result(token, chat_id, message_id, tool, truncated_target, decision, session_id)
                     return decision
 
             # Check for text message (backward compatibility with /allow /deny commands)
@@ -501,7 +512,7 @@ def telegram_approval_decision(tool: str, target: str, session_id: str, raw_targ
                     'reply_to_message_id': msg.get('message_id')
                 }, session_id)
                 # Edit the original message to show result
-                edit_message_result(token, chat_id, message_id, tool, 'allow', session_id)
+                edit_message_result(token, chat_id, message_id, tool, truncated_target, 'allow', session_id)
                 return 'allow'
             elif text == '/deny' or text.startswith('/deny '):
                 log_tool_decision(session_id, '', tool, raw_target,
@@ -514,7 +525,7 @@ def telegram_approval_decision(tool: str, target: str, session_id: str, raw_targ
                     'reply_to_message_id': msg.get('message_id')
                 }, session_id)
                 # Edit the original message to show result
-                edit_message_result(token, chat_id, message_id, tool, 'deny', session_id)
+                edit_message_result(token, chat_id, message_id, tool, truncated_target, 'deny', session_id)
                 return 'deny'
 
     # Timeout reached

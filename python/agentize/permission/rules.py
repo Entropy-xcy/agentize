@@ -31,6 +31,18 @@ PERMISSION_RULES = {
         ('Edit', r'.*'),
         ('Read', r'^/.*'),  # Allow reading any absolute path (deny rules filter secrets)
 
+        # Search tools (read-only)
+        ('Grep', r'.*'),
+        ('Glob', r'.*'),
+        ('LSP', r'.*'),
+
+        # Task agents (exploration/research)
+        ('Task', r'.*'),
+
+        # User interaction tools
+        ('TodoWrite', r'.*'),
+        ('AskUserQuestion', r'.*'),
+
         # Bash - File operations
         ('Bash', r'^chmod \+x'),
         ('Bash', r'^test -f'),

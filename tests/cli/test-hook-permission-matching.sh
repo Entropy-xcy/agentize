@@ -9,6 +9,7 @@ FIXTURE_FILE="$PROJECT_ROOT/tests/fixtures/test-pre-tool-use-input.json"
 test_info "PreToolUse hook permission matching"
 
 # Helper: Run hook with fixture and extract permission decision
+# Note: Unsets AGENTIZE_USE_TG and HANDSOFF_AUTO_PERMISSION for test isolation
 run_hook_with_fixture() {
     local fixture_key="$1"
     local decision
@@ -16,8 +17,8 @@ run_hook_with_fixture() {
     # Extract fixture from JSON file using jq
     local input=$(jq -c ".$fixture_key" "$FIXTURE_FILE")
 
-    # Run hook and extract permissionDecision
-    decision=$(echo "$input" | python3 "$HOOK_SCRIPT" | jq -r '.hookSpecificOutput.permissionDecision')
+    # Run hook and extract permissionDecision (isolated from external services)
+    decision=$(unset AGENTIZE_USE_TG HANDSOFF_AUTO_PERMISSION; echo "$input" | python3 "$HOOK_SCRIPT" | jq -r '.hookSpecificOutput.permissionDecision')
 
     echo "$decision"
 }
