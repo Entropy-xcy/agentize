@@ -5,9 +5,10 @@ Polling server for GitHub Projects v2 automation.
 ## Purpose
 
 This module implements a long-running server that:
-1. Polls GitHub Projects v2 at configurable intervals
-2. Identifies issues with "Plan Accepted" status and `agentize:plan` label
-3. Spawns worktrees for implementation via `wt spawn`
+1. Sends a Telegram startup notification (if configured)
+2. Polls GitHub Projects v2 at configurable intervals
+3. Identifies issues with "Plan Accepted" status and `agentize:plan` label
+4. Spawns worktrees for implementation via `wt spawn`
 
 ## Files
 
@@ -21,8 +22,14 @@ This module implements a long-running server that:
 lol serve --tg-token=<token> --tg-chat-id=<id> --period=5m
 
 # Direct Python invocation
-python -m agentize.server --period=5m
+python -m agentize.server --period=5m --tg-token=<token> --tg-chat-id=<id>
 ```
+
+Telegram credentials can also be provided via environment variables:
+- `TG_API_TOKEN` - Telegram Bot API token
+- `TG_CHAT_ID` - Telegram chat ID
+
+CLI arguments take precedence over environment variables.
 
 ## Configuration
 
@@ -32,3 +39,11 @@ project:
   org: <organization>
   id: <project-number>
 ```
+
+## Telegram Startup Notification
+
+When Telegram credentials are configured, the server sends a startup message including:
+- Hostname
+- Project identifier (org/id)
+- Polling period
+- Working directory

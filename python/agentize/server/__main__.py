@@ -7,10 +7,14 @@ Polls GitHub Projects v2 for issues with "Plan Accepted" status and
 
 import argparse
 import json
+import os
 import signal
+import socket
 import subprocess
 import sys
 import time
+import urllib.request
+import urllib.error
 from pathlib import Path
 
 
@@ -51,6 +55,65 @@ def parse_period(period_str: str) -> int:
         return int(period_str[:-1])
     else:
         raise ValueError(f"Invalid period format: {period_str}. Use Nm or Ns.")
+
+
+def send_telegram_message(token: str, chat_id: str, text: str) -> bool:
+    """Send a message to Telegram.
+
+    Args:
+        token: Telegram Bot API token
+        chat_id: Chat ID to send to
+        text: Message text (supports HTML parse mode)
+
+    Returns:
+        True if successful, False otherwise
+    """
+    url = f'https://api.telegram.org/bot{token}/sendMessage'
+    payload = {
+        'chat_id': chat_id,
+        'text': text,
+        'parse_mode': 'HTML'
+    }
+
+    try:
+        data = json.dumps(payload).encode('utf-8')
+        req = urllib.request.Request(
+            url, data=data,
+            headers={'Content-Type': 'application/json'}
+        )
+        with urllib.request.urlopen(req, timeout=10) as response:
+            result = json.loads(response.read().decode('utf-8'))
+            return result.get('ok', False)
+    except (urllib.error.URLError, urllib.error.HTTPError, json.JSONDecodeError, TimeoutError) as e:
+        print(f"Failed to send Telegram message: {e}", file=sys.stderr)
+        return False
+
+
+def notify_server_start(token: str, chat_id: str, org: str, project_id: int, period: int) -> None:
+    """Send server startup notification to Telegram.
+
+    Args:
+        token: Telegram Bot API token
+        chat_id: Chat ID to send to
+        org: GitHub organization
+        project_id: GitHub project number
+        period: Polling interval in seconds
+    """
+    hostname = socket.gethostname()
+    cwd = os.getcwd()
+
+    message = (
+        f"🚀 <b>Agentize Server Started</b>\n\n"
+        f"Host: <code>{hostname}</code>\n"
+        f"Project: <code>{org}/{project_id}</code>\n"
+        f"Period: <code>{period}s</code>\n"
+        f"Working Dir: <code>{cwd}</code>"
+    )
+
+    if send_telegram_message(token, chat_id, message):
+        print("Telegram notification sent")
+    else:
+        print("Warning: Failed to send Telegram startup notification", file=sys.stderr)
 
 
 def load_config() -> tuple[str, int]:
@@ -149,10 +212,26 @@ def spawn_worktree(issue_no: int) -> bool:
     return result.returncode == 0
 
 
-def run_server(period: int) -> None:
-    """Main polling loop."""
+def run_server(period: int, tg_token: str | None = None, tg_chat_id: str | None = None) -> None:
+    """Main polling loop.
+
+    Args:
+        period: Polling interval in seconds
+        tg_token: Telegram Bot API token (optional, falls back to TG_API_TOKEN env)
+        tg_chat_id: Telegram chat ID (optional, falls back to TG_CHAT_ID env)
+    """
     org, project_id = load_config()
     print(f"Starting server: org={org}, project={project_id}, period={period}s")
+
+    # Resolve Telegram credentials (CLI args take precedence over env vars)
+    token = tg_token or os.getenv('TG_API_TOKEN', '')
+    chat_id = tg_chat_id or os.getenv('TG_CHAT_ID', '')
+
+    # Send startup notification if Telegram is configured
+    if token and chat_id:
+        notify_server_start(token, chat_id, org, project_id, period)
+    else:
+        print("Telegram notification skipped (no credentials configured)")
 
     # Setup signal handler for graceful shutdown
     running = [True]
@@ -193,6 +272,14 @@ def main() -> None:
         '--period', default='5m',
         help='Polling interval (e.g., 5m, 300s). Default: 5m'
     )
+    parser.add_argument(
+        '--tg-token',
+        help='Telegram Bot API token (or set TG_API_TOKEN env var)'
+    )
+    parser.add_argument(
+        '--tg-chat-id',
+        help='Telegram chat ID (or set TG_CHAT_ID env var)'
+    )
     args = parser.parse_args()
 
     try:
@@ -201,7 +288,7 @@ def main() -> None:
         print(f"Error: {e}", file=sys.stderr)
         sys.exit(1)
 
-    run_server(period_seconds)
+    run_server(period_seconds, args.tg_token, args.tg_chat_id)
 
 
 if __name__ == '__main__':
