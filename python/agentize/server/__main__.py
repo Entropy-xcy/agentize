@@ -212,26 +212,27 @@ def filter_ready_issues(items: list[dict]) -> list[int]:
     return ready
 
 
+def _run_wt(args: str, capture_output: bool = False) -> subprocess.CompletedProcess:
+    """Run wt command via bash (wt is a shell function, not an executable)."""
+    agentize_home = os.environ.get('AGENTIZE_HOME', '')
+    if not agentize_home:
+        raise RuntimeError("AGENTIZE_HOME not set")
+    return subprocess.run(
+        ['bash', '-c', f'source "{agentize_home}/setup.sh" && wt {args}'],
+        capture_output=capture_output, text=True
+    )
+
+
 def worktree_exists(issue_no: int) -> bool:
     """Check if a worktree exists for the given issue number."""
-    result = subprocess.run(
-        ['wt', 'resolve', str(issue_no)],
-        capture_output=True, text=True
-    )
+    result = _run_wt(f'resolve {issue_no}', capture_output=True)
     return result.returncode == 0
 
 
 def spawn_worktree(issue_no: int) -> bool:
     """Spawn a new worktree for the given issue."""
     print(f"Spawning worktree for issue #{issue_no}...")
-    agentize_home = os.environ.get('AGENTIZE_HOME', '')
-    if not agentize_home:
-        print("Error: AGENTIZE_HOME not set")
-        return False
-    # wt is a shell function, must source setup.sh first
-    result = subprocess.run(
-        ['bash', '-c', f'source "{agentize_home}/setup.sh" && wt spawn {issue_no}']
-    )
+    result = _run_wt(f'spawn {issue_no}')
     return result.returncode == 0
 
 
