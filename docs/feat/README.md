@@ -19,6 +19,59 @@ This folder describes the major features of Agentize, including:
   - `lol`: Play with the SDK powered by Agentize!
   - `wt`: Git worktree wrappers
 
-TODO: Put a diagram for the interactions among all the features modules above.
 ```mermaid
+flowchart TB
+    subgraph CLI["cli/"]
+        lol["lol"]
+        wt["wt"]
+    end
+
+    subgraph Core["core/"]
+        ultra["ultra-planner"]
+        i2i["issue-to-impl"]
+        milestone["milestone"]
+        handsoff["handsoff"]
+    end
+
+    subgraph Permissions["permissions/"]
+        rules["rules"]
+        telegram["telegram"]
+    end
+
+    subgraph Kanban["Kanban Board"]
+        kanban["kanban.md"]
+        ghwf["github-workflow"]
+    end
+
+    server["server"]
+
+    %% User interaction
+    User((User)) --> CLI
+
+    %% CLI triggers core workflows
+    lol --> ultra
+    lol --> i2i
+
+    %% Core workflow relationships
+    ultra -->|creates plan| kanban
+    i2i -->|creates PR| kanban
+    i2i --> milestone
+    milestone -->|tracks progress| i2i
+    handsoff -->|auto-continues| ultra
+    handsoff -->|auto-continues| i2i
+
+    %% Server automation
+    server -->|monitors| kanban
+    server -->|triggers| i2i
+
+    %% GitHub sync
+    ghwf <-->|syncs status| kanban
+
+    %% Permission checks
+    rules -.->|grants| Core
+    rules -.->|not sure| telegram
+    telegram -.->|manual approval| Core
+
+    %% Worktree management
+    wt -->|manages branches| i2i
 ```
