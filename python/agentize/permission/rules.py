@@ -117,15 +117,6 @@ PERMISSION_RULES = {
         ('Read', r'/.*\.key$'),
         ('Read', r'.*\.pem$'),
     ],
-    'ask': [
-        # General commands
-        ('Bash', r'^python3'),
-        ('Bash', r'^test(?!\s+-[fd])'),  # test without -f or -d flags
-
-        # GitHub write operations
-        ('Bash', r'^gh api'),
-        ('Bash', r'^gh project item-edit'),
-    ]
 }
 
 
