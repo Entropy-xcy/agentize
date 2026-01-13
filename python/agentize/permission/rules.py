@@ -96,6 +96,7 @@ PERMISSION_RULES = {
 
         # Bash - Git write operations (more aggressive)
         ('Bash', r'^git add'),
+        ('Bash', r'^git rm'),
         ('Bash', r'^git push'),
         ('Bash', r'^git commit'),
 

@@ -44,6 +44,12 @@ Testing framework, validation, and agent testing:
 - `test/agents.md` - Agent testing documentation
 - `test/code-review-agent.md` - Code review agent testing
 
+### Component Reference
+
+- `agents.md` - Agent definitions and configurations
+- `commands.md` - Command shortcuts and workflows
+- `skills.md` - Reusable skill definitions
+
 ### Reference Documentation
 
 - `envvar.md` - Environment variables reference
