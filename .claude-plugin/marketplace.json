@@ -14,7 +14,10 @@
       "author": {
         "name": "SyntheSys-Lab"
       },
-      "source": ".",
+      "source": {
+        "source": "github",
+        "repo": "Synthesys-Lab/agentize"
+      },
       "category": "development",
       "homepage": "https://github.com/Synthesys-Lab/agentize"
     }
