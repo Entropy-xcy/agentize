@@ -3,7 +3,7 @@
   "hooks": {
     "beforeSubmitPrompt": [
       {
-        "command": "python .cursor/hooks/before-prompt-submit.py"
+        "command": "python3 .cursor/hooks/before-prompt-submit.py"
       }
     ]
   }

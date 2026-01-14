@@ -6,12 +6,19 @@ import json
 import re
 import shutil
 
+# Add hooks directory to Python path so we can import logger
+hooks_dir = os.path.dirname(os.path.abspath(__file__))
+if hooks_dir not in sys.path:
+    sys.path.insert(0, hooks_dir)
+
 from logger import logger
 
 
 def _session_dir():
     """Get session directory path using AGENTIZE_HOME fallback."""
     base = os.getenv('AGENTIZE_HOME', '.')
+    os.makedirs(base, exist_ok=True)
+    os.makedirs(os.path.join(base, '.tmp', 'hooked-sessions'), exist_ok=True)
     return os.path.join(base, '.tmp', 'hooked-sessions')
 
 
@@ -45,29 +52,32 @@ def _extract_issue_no(prompt):
 
 
 def main():
+    # Read hook input from stdin first
+    hook_input = json.load(sys.stdin)
 
     handsoff = os.getenv('HANDSOFF_MODE', '0')
 
     # Do nothing if handsoff mode is disabled
     if handsoff.lower() in ['0', 'false', 'off', 'disable']:
         logger('SYSTEM', f'Handsoff mode disabled, exiting hook, {handsoff}')
+        # Allow prompt to continue when handsoff mode is disabled
+        print(json.dumps({"continue": True}))
         sys.exit(0)
 
-    hook_input = json.load(sys.stdin)
+    print(json.dumps({"continue": False}))
+    sys.exit(0)
 
-    error = {'decision': 'block'}
     prompt = hook_input.get("prompt", "")
     if not prompt:
-        error['reason'] = 'No prompt provided.'
+        # If no prompt, allow it to continue (shouldn't happen, but be safe)
+        print(json.dumps({"continue": True}))
+        sys.exit(0)
 
-    session_id = hook_input.get("session_id", "")
+    # Use conversation_id as session identifier (provided by beforeSubmitPrompt hook)
+    session_id = hook_input.get("conversation_id", "")
     if not session_id:
-        error['reason'] = 'No session_id provided.'
-
-    if error.get('reason', None):
-        print(json.dumps(error))
-        logger('SYSTEM', f"Error in hook input: {error['reason']}")
-        sys.exit(1)
+        # Fallback to generation_id if conversation_id is missing
+        session_id = hook_input.get("generation_id", "unknown")
 
     state = {}
 
@@ -108,8 +118,14 @@ def main():
                 index_data = {'session_id': session_id, 'workflow': state['workflow']}
                 logger(session_id, f"Writing issue index: {index_data}")
                 json.dump(index_data, f)
+        
+        # Allow prompt to continue after processing workflow state
+        print(json.dumps({"continue": True}))
     else:
         logger(session_id, "No workflow matched, doing nothing.")
+        # Allow prompt to continue if no workflow matched
+        print(json.dumps({"continue": True}))
+
 
 if __name__ == "__main__":
     main()
