@@ -14,6 +14,20 @@ This directory contains the Docker sandbox environment used for:
 - `Dockerfile` - Docker image definition with all required tools
 - `install.sh` - Claude Code installation script (copied into container)
 
+## User
+
+The container runs as the `agentizer` user with sudo privileges.
+
+## Installed Tools
+
+- Node.js 20.x LTS
+- Python 3.12 with uv package manager
+- SDKMAN for Java/SDK management
+- Git, curl, wget, and other base utilities
+- Playwright with bundled Chromium
+- claude-code-router
+- Claude Code
+
 ## Build
 
 ```bash
@@ -24,4 +38,14 @@ docker build -t agentize-sandbox ./sandbox
 
 ```bash
 docker run -it --rm agentize-sandbox
+```
+
+## Testing
+
+```bash
+# Run PATH verification tests
+./tests/sandbox-path-test.sh
+
+# Run full sandbox build and verification tests
+./tests/e2e/test-sandbox-build.sh
 ```

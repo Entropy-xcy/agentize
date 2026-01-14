@@ -68,8 +68,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 FROM python AS sdkman
 
 # Install SDKMAN
-RUN curl -s "https://get.sdkman.io" | bash \
-    && rm -rf /root/.sdkman/bin/sdkman-init.sh
+RUN curl -s "https://get.sdkman.io" | bash
 
 # Configure shell profile for SDKMAN
 RUN echo 'source "$HOME/.sdkman/bin/sdkman-init.sh"' >> /root/.bashrc
@@ -112,7 +111,9 @@ RUN mkdir -p /root/.claude/downloads
 # Install Claude Code (silent mode - assumes install.sh works in container)
 RUN chmod +x /tmp/install.sh \
     && /tmp/install.sh stable \
-    && rm -f /tmp/install.sh
+    && rm -f /tmp/install.sh \
+    && rm -f /usr/local/bin/claude \
+    && cp /root/.local/bin/claude /usr/local/bin/claude && chmod +x /usr/local/bin/claude
 
 # -----------------------------------------------------------------------------
 # Stage 8: Final
@@ -121,25 +122,30 @@ FROM claude AS final
 
 # Create sudoers.d directory for non-root sudo access
 RUN mkdir -p /etc/sudoers.d \
-    && echo "developer ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers.d/developer \
-    && chmod 440 /etc/sudoers.d/developer
+    && echo "agentizer ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers.d/agentizer \
+    && chmod 440 /etc/sudoers.d/agentizer
 
 # Add non-root user
-RUN useradd -m -s /bin/bash developer \
-    && mkdir -p /home/developer/.claude/downloads \
-    && chown -R developer:developer /home/developer
+RUN useradd -m -s /bin/bash agentizer \
+    && mkdir -p /home/agentizer/.claude/downloads \
+    && chown -R agentizer:agentizer /home/agentizer
+
+# Copy SDKMAN installation from root to agentizer home
+RUN cp -r /root/.sdkman /home/agentizer/.sdkman \
+    && chown -R agentizer:agentizer /home/agentizer/.sdkman
 
 # Set working directory
 WORKDIR /workspace
 
-# Set environment for developer
-ENV HOME=/home/developer
+# Set environment for agentizer
+ENV HOME=/home/agentizer
 
-# Ensure SDKMAN is available
-RUN echo 'source "$HOME/.sdkman/bin/sdkman-init.sh"' >> /home/developer/.bashrc
+# Configure PATH and SDKMAN for agentizer user
+RUN echo 'export PATH="/usr/local/bin:$PATH"' >> /home/agentizer/.bashrc \
+    && echo 'source "$HOME/.sdkman/bin/sdkman-init.sh"' >> /home/agentizer/.bashrc
 
 # Switch to non-root user
-USER developer
+USER agentizer
 
 # Default command
 CMD ["/bin/bash"]
