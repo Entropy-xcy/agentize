@@ -86,6 +86,18 @@ FROM sdkman AS browser
 # -----------------------------------------------------------------------------
 FROM browser AS tools
 
+# Install GitHub CLI from official repository
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates \
+    curl \
+    gnupg \
+    && mkdir -p /etc/apt/keyrings \
+    && curl -fsSL https://cli.github.com/packages/github-cli-archive-keyring.gpg | gpg --dearmor -o /etc/apt/keyrings/github-cli-archive-keyring.gpg \
+    && echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/github-cli-archive-keyring.gpg] https://cli.github.com/packages/apt main" > /etc/apt/sources.list.d/github-cli.list \
+    && apt-get update \
+    && apt-get install -y gh \
+    && rm -rf /var/lib/apt/lists/*
+
 # Install claude-code-router globally
 RUN npm install -g claude-code-router
 
@@ -144,8 +156,13 @@ ENV HOME=/home/agentizer
 RUN echo 'export PATH="/usr/local/bin:$PATH"' >> /home/agentizer/.bashrc \
     && echo 'source "$HOME/.sdkman/bin/sdkman-init.sh"' >> /home/agentizer/.bashrc
 
+# Copy entrypoint script
+COPY entrypoint.sh /usr/local/bin/entrypoint
+RUN chmod +x /usr/local/bin/entrypoint
+
 # Switch to non-root user
 USER agentizer
 
 # Default command
+ENTRYPOINT ["/usr/local/bin/entrypoint"]
 CMD ["/bin/bash"]

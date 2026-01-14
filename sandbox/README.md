@@ -13,6 +13,8 @@ This directory contains the Docker sandbox environment used for:
 
 - `Dockerfile` - Docker image definition with all required tools
 - `install.sh` - Claude Code installation script (copied into container)
+- `entrypoint.sh` - Container entrypoint with ccr/claude routing
+- `run.sh` - Docker run script with volume passthrough
 
 ## User
 
@@ -27,6 +29,7 @@ The container runs as the `agentizer` user with sudo privileges.
 - Playwright with bundled Chromium
 - claude-code-router
 - Claude Code
+- GitHub CLI
 
 ## Build
 
@@ -34,10 +37,68 @@ The container runs as the `agentizer` user with sudo privileges.
 docker build -t agentize-sandbox ./sandbox
 ```
 
-## Usage
+Or use the Makefile:
 
 ```bash
-docker run -it --rm agentize-sandbox
+make sandbox-build
+```
+
+## Usage with Volume Passthrough
+
+Use `run.sh` to mount external resources into the container:
+
+```bash
+# Basic usage
+./sandbox/run.sh
+
+# Run with custom container name
+./sandbox/run.sh my-container
+
+# Pass arguments to the container
+./sandbox/run.sh -- --help
+
+# Run with --ccr flag for CCR mode
+./sandbox/run.sh -- --ccr --help
+```
+
+The script automatically mounts:
+- `~/.claude-code-router/config.json` -> `/home/agentizer/.claude-code-router/config.json`
+- `~/.config/gh` -> `/home/agentizer/.config/gh` (GitHub CLI credentials)
+- `~/.git-credentials` -> `/home/agentizer/.git-credentials`
+- `~/.gitconfig` -> `/home/agentizer/.gitconfig`
+- Current agentize project directory -> `/workspace/agentize`
+
+Or use the Makefile:
+
+```bash
+make sandbox-run
+make sandbox-run -- --help
+```
+
+## Entrypoint Modes
+
+The container supports two modes via the entrypoint:
+
+### Claude Code Mode (Default)
+
+Without `--ccr` flag, runs Claude Code:
+
+```bash
+docker run agentize-sandbox claude --help
+```
+
+### CCR Mode
+
+With `--ccr` flag, runs claude-code-router:
+
+```bash
+docker run agentize-sandbox ccr code --help
+```
+
+The `--ccr` flag can be used directly when running the container:
+
+```bash
+./sandbox/run.sh -- --ccr --help
 ```
 
 ## Testing
