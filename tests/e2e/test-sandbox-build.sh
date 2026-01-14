@@ -25,9 +25,9 @@ docker run --rm agentize-sandbox-test uv --version
 echo "Verifying Git..."
 docker run --rm agentize-sandbox-test git --version
 
-# Verify Chrome
-echo "Verifying Chrome..."
-docker run --rm agentize-sandbox-test google-chrome --version
+# Verify Chrome/Chromium
+echo "Verifying Chrome/Chromium..."
+docker run --rm agentize-sandbox-test chromium-browser --version || docker run --rm agentize-sandbox-test google-chrome --version
 
 # Verify claude-code-router
 echo "Verifying claude-code-router..."

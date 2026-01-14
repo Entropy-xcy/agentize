@@ -53,7 +53,7 @@ FROM node AS python
 
 # Install uv package manager
 RUN curl -LsSf https://astral.sh/uv/install.sh | sh \
-    && rm -rf /root/.cargo/bin/uv
+    && ln -sf /root/.local/bin/uv /usr/local/bin/uv
 
 # Install Python and pip
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -75,33 +75,28 @@ RUN curl -s "https://get.sdkman.io" | bash \
 RUN echo 'source "$HOME/.sdkman/bin/sdkman-init.sh"' >> /root/.bashrc
 
 # -----------------------------------------------------------------------------
-# Stage 5: Chrome
+# Stage 5: Browser
 # -----------------------------------------------------------------------------
-FROM sdkman AS chrome
+FROM sdkman AS browser
 
-# Install Google Chrome
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    apt-transport-https \
-    ca-certificates \
-    gnupg \
-    && rm -rf /var/lib/apt/lists/*
-
-RUN wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add - \
-    && echo "deb [arch=amd64] https://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google-chrome.list \
-    && apt-get update && apt-get install -y --no-install-recommends google-chrome-stable \
-    && rm -rf /var/lib/apt/lists/*
+# Playwright's bundled Chromium will be installed in tools stage
+# No separate browser installation needed here
 
 # -----------------------------------------------------------------------------
 # Stage 6: Tools (claude-code-router, playwright-mcp)
 # -----------------------------------------------------------------------------
-FROM chrome AS tools
+FROM browser AS tools
 
 # Install claude-code-router globally
 RUN npm install -g claude-code-router
 
-# Install playwright and playwright MCP
+# Install playwright and playwright MCP with bundled Chromium
 RUN npm install -g playwright \
     && npx playwright install --with-deps chromium
+
+# Create symlinks for browser compatibility (playwright's bundled chromium)
+RUN ln -sf /root/.cache/ms-playwright/chromium-*/chrome-linux/chrome /usr/bin/google-chrome 2>/dev/null || true && \
+    ln -sf /root/.cache/ms-playwright/chromium-*/chrome-linux/chrome /usr/bin/chromium 2>/dev/null || true
 
 # -----------------------------------------------------------------------------
 # Stage 7: Claude Code
@@ -124,6 +119,11 @@ RUN chmod +x /tmp/install.sh \
 # -----------------------------------------------------------------------------
 FROM claude AS final
 
+# Create sudoers.d directory for non-root sudo access
+RUN mkdir -p /etc/sudoers.d \
+    && echo "developer ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers.d/developer \
+    && chmod 440 /etc/sudoers.d/developer
+
 # Add non-root user
 RUN useradd -m -s /bin/bash developer \
     && mkdir -p /home/developer/.claude/downloads \
@@ -132,17 +132,14 @@ RUN useradd -m -s /bin/bash developer \
 # Set working directory
 WORKDIR /workspace
 
-# Switch to non-root user
-USER developer
-
-# Add developer to necessary groups for Chrome
-RUN echo "developer ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
-
 # Set environment for developer
 ENV HOME=/home/developer
 
 # Ensure SDKMAN is available
 RUN echo 'source "$HOME/.sdkman/bin/sdkman-init.sh"' >> /home/developer/.bashrc
+
+# Switch to non-root user
+USER developer
 
 # Default command
 CMD ["/bin/bash"]
