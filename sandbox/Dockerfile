@@ -121,25 +121,26 @@ FROM claude AS final
 
 # Create sudoers.d directory for non-root sudo access
 RUN mkdir -p /etc/sudoers.d \
-    && echo "developer ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers.d/developer \
-    && chmod 440 /etc/sudoers.d/developer
+    && echo "agentizer ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers.d/agentizer \
+    && chmod 440 /etc/sudoers.d/agentizer
 
 # Add non-root user
-RUN useradd -m -s /bin/bash developer \
-    && mkdir -p /home/developer/.claude/downloads \
-    && chown -R developer:developer /home/developer
+RUN useradd -m -s /bin/bash agentizer \
+    && mkdir -p /home/agentizer/.claude/downloads \
+    && chown -R agentizer:agentizer /home/agentizer
 
 # Set working directory
 WORKDIR /workspace
 
-# Set environment for developer
-ENV HOME=/home/developer
+# Set environment for agentizer
+ENV HOME=/home/agentizer
 
-# Ensure SDKMAN is available
-RUN echo 'source "$HOME/.sdkman/bin/sdkman-init.sh"' >> /home/developer/.bashrc
+# Configure PATH and SDKMAN for agentizer user
+RUN echo 'export PATH="/usr/local/bin:$PATH"' >> /home/agentizer/.bashrc \
+    && echo 'source "$HOME/.sdkman/bin/sdkman-init.sh"' >> /home/agentizer/.bashrc
 
 # Switch to non-root user
-USER developer
+USER agentizer
 
 # Default command
 CMD ["/bin/bash"]
