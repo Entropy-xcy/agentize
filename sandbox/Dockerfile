@@ -86,6 +86,19 @@ FROM sdkman AS browser
 # -----------------------------------------------------------------------------
 FROM browser AS tools
 
+# Install GitHub CLI from official binary release
+RUN ARCH=$(dpkg --print-architecture) && \
+    if [ "$ARCH" = "arm64" ] || [ "$ARCH" = "aarch64" ]; then \
+        GH_ARCH="arm64"; \
+    else \
+        GH_ARCH="amd64"; \
+    fi && \
+    curl -fsSL https://github.com/cli/cli/releases/download/v2.55.0/gh_2.55.0_linux_${GH_ARCH}.tar.gz -o /tmp/gh.tar.gz && \
+    tar -xzf /tmp/gh.tar.gz -C /tmp && \
+    mv /tmp/gh_2.55.0_linux_${GH_ARCH}/bin/gh /usr/local/bin/ && \
+    mv /tmp/gh_2.55.0_linux_${GH_ARCH}/bin/ghd /usr/local/bin/ 2>/dev/null || true && \
+    rm -rf /tmp/gh.tar.gz /tmp/gh_2.55.0_linux_${GH_ARCH}
+
 # Install claude-code-router globally
 RUN npm install -g claude-code-router
 
@@ -144,8 +157,13 @@ ENV HOME=/home/agentizer
 RUN echo 'export PATH="/usr/local/bin:$PATH"' >> /home/agentizer/.bashrc \
     && echo 'source "$HOME/.sdkman/bin/sdkman-init.sh"' >> /home/agentizer/.bashrc
 
+# Copy entrypoint script
+COPY entrypoint.sh /usr/local/bin/entrypoint
+RUN chmod +x /usr/local/bin/entrypoint
+
 # Switch to non-root user
 USER agentizer
 
 # Default command
+ENTRYPOINT ["/usr/local/bin/entrypoint"]
 CMD ["/bin/bash"]
