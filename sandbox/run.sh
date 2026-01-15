@@ -3,10 +3,11 @@
 #
 # This script mounts external resources into the container:
 # - ~/.claude-code-router/config.json -> /home/agentizer/.claude-code-router/config.json
-# - ~/.config/gh -> /home/agentizer/.config/gh (GitHub CLI credentials)
+# - ~/.config/gh -> /home/agentizer/.config/gh (GitHub CLI credentials, read-write for token refresh)
 # - ~/.git-credentials -> /home/agentizer/.git-credentials
 # - ~/.gitconfig -> /home/agentizer/.gitconfig
 # - Current agentize project directory -> /workspace/agentize
+# - GITHUB_TOKEN environment variable (if set)
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 IMAGE_NAME="agentize-sandbox"
@@ -96,7 +97,7 @@ fi
 # 2. Passthrough GitHub CLI credentials
 GH_CONFIG="$HOME/.config/gh"
 if [ -d "$GH_CONFIG" ]; then
-    DOCKER_ARGS+=("-v" "$GH_CONFIG:/home/agentizer/.config/gh:ro")
+    DOCKER_ARGS+=("-v" "$GH_CONFIG:/home/agentizer/.config/gh:rw")
 fi
 
 # 3. Passthrough git credentials (if exists)
@@ -112,6 +113,11 @@ fi
 # 4. Passthrough agentize project directory
 PROJECT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 DOCKER_ARGS+=("-v" "$PROJECT_DIR:/workspace/agentize")
+
+# 5. Passthrough GitHub token if set (for GH CLI authentication)
+if [ -n "$GITHUB_TOKEN" ]; then
+    DOCKER_ARGS+=("-e" "GITHUB_TOKEN=$GITHUB_TOKEN")
+fi
 
 # When --cmd is provided, override entrypoint to run custom command
 if [ ${#CUSTOM_CMD[@]} -gt 0 ]; then
