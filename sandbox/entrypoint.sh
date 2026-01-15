@@ -22,10 +22,22 @@ if [ $HAS_CCR -eq 1 ]; then
     /usr/bin/sudo mkdir -p /home/agentizer/.claude-code-router/logs
     /usr/bin/sudo chown -R agentizer:agentizer /home/agentizer/.claude-code-router/logs
 
-    # Set environment variables for Claude (passed through by CCR)
-    # These are read by Claude when running inside CCR
-    export ANTHROPIC_DANGEROUSLY_SKIP_PERMISSIONS=1
-    export ANTHROPIC_PLUGIN_DIR=.claude-plugin
+    # Create default config-router.json if it doesn't exist
+    if [ ! -f /home/agentizer/.claude-code-router/config-router.json ]; then
+        /usr/bin/sudo cat > /home/agentizer/.claude-code-router/config-router.json << 'CONFIGEOF'
+{
+  "HOST": "127.0.0.1",
+  "PORT": 3456,
+  "APIKEY": "",
+  "API_TIMEOUT_MS": "600000",
+  "PROXY_URL": "",
+  "Transformers": [],
+  "Providers": [],
+  "Router": {}
+}
+CONFIGEOF
+        /usr/bin/sudo chown agentizer:agentizer /home/agentizer/.claude-code-router/config-router.json
+    fi
 
     # Run CCR code mode - args after --ccr are treated as prompt to Claude
     exec ccr code "${ARGS[@]}"
