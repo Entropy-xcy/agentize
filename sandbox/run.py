@@ -234,20 +234,20 @@ def parse_arguments(argv=None):
             container_args.append(arg)
         i += 1
 
-    # Build filtered argv for argparse (remove --cmd and everything after it, and --)
+    # Build filtered argv for argparse (remove --cmd and everything after it,
+    # and -- along with everything after it)
     # Remove --cmd and any args that were captured as custom_cmd
     filtered_argv = []
-    skip_until_dash = False
+    skip_rest = False
     for arg in argv:
-        if skip_until_dash:
-            if arg == "--":
-                skip_until_dash = False
+        if skip_rest:
             continue
         if arg == "--cmd":
-            skip_until_dash = True
+            skip_rest = True
             continue
         if arg == "--":
-            continue  # Don't include -- in filtered argv
+            # Skip -- and everything after it (those go to container_args)
+            break
         filtered_argv.append(arg)
 
     parser = argparse.ArgumentParser(
@@ -377,7 +377,14 @@ def build_run_command(
     if "GITHUB_TOKEN" in os.environ:
         cmd.extend(["-e", f"GITHUB_TOKEN={os.environ['GITHUB_TOKEN']}"])
 
-    # 6. Working directory
+    # 6. Anthropic API credentials (when not using CCR mode)
+    if not use_ccr:
+        if "ANTHROPIC_API_KEY" in os.environ:
+            cmd.extend(["-e", f"ANTHROPIC_API_KEY={os.environ['ANTHROPIC_API_KEY']}"])
+        if "ANTHROPIC_BASE_URL" in os.environ:
+            cmd.extend(["-e", f"ANTHROPIC_BASE_URL={os.environ['ANTHROPIC_BASE_URL']}"])
+
+    # 7. Working directory
     cmd.extend(["-w", "/workspace/agentize"])
 
     # Image name
@@ -388,9 +395,10 @@ def build_run_command(
         cmd.extend(["--entrypoint", entrypoint])
 
     # Handle custom command execution
+    # Note: Custom commands go through entrypoint to get permission fixes applied
     if use_cmd and custom_cmd:
-        cmd.extend(["--entrypoint", "/bin/bash", image_name, "-c"])
-        cmd.append(shlex.join(custom_cmd))
+        cmd.extend(["--entrypoint", "/usr/local/bin/entrypoint", image_name, "--cmd"])
+        cmd.extend(custom_cmd)
     elif use_ccr:
         cmd.extend(["--entrypoint", "/usr/local/bin/entrypoint", image_name, "--ccr"])
         cmd.extend(container_args)
@@ -445,6 +453,9 @@ def main():
         container_args=container_args,
         entrypoint=args.entrypoint,
     )
+
+    # Print the command being executed
+    print(f"Executing: {shlex.join(cmd)}", file=sys.stderr)
 
     # Execute
     os.execvp(cmd[0], cmd)

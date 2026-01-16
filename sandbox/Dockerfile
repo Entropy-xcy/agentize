@@ -20,7 +20,7 @@ FROM ubuntu:24.04 AS base
 ENV DEBIAN_FRONTEND=noninteractive
 ENV HOME=/root
 
-# Install base packages
+# Install base packages, Node.js 20.x LTS, and Python
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
     curl \
@@ -34,63 +34,18 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libssl-dev \
     pkg-config \
     sudo \
-    && rm -rf /var/lib/apt/lists/*
-
-# -----------------------------------------------------------------------------
-# Stage 2: Node.js
-# -----------------------------------------------------------------------------
-FROM base AS node
-
-# Install NodeSource Node.js 20.x LTS
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    ca-certificates \
-    curl \
+    jq \
     gnupg \
+    python3 \
+    python3-pip \
+    python3-venv \
+    && curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
+    && apt-get install -y --no-install-recommends nodejs \
     && rm -rf /var/lib/apt/lists/*
-
-RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
-    && apt-get update && apt-get install -y --no-install-recommends nodejs \
-    && rm -rf /var/lib/apt/lists/*
-
-# -----------------------------------------------------------------------------
-# Stage 3: Python & uv
-# -----------------------------------------------------------------------------
-FROM node AS python
 
 # Install uv package manager
 RUN curl -LsSf https://astral.sh/uv/install.sh | sh \
     && ln -sf /root/.local/bin/uv /usr/local/bin/uv
-
-# Install Python and pip
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    python3 \
-    python3-pip \
-    python3-venv \
-    && rm -rf /var/lib/apt/lists/*
-
-# -----------------------------------------------------------------------------
-# Stage 4: SDKMAN
-# -----------------------------------------------------------------------------
-FROM python AS sdkman
-
-# Install SDKMAN
-RUN curl -s "https://get.sdkman.io" | bash
-
-# Configure shell profile for SDKMAN
-RUN echo 'source "$HOME/.sdkman/bin/sdkman-init.sh"' >> /root/.bashrc
-
-# -----------------------------------------------------------------------------
-# Stage 5: Browser
-# -----------------------------------------------------------------------------
-FROM sdkman AS browser
-
-# Playwright's bundled Chromium will be installed in tools stage
-# No separate browser installation needed here
-
-# -----------------------------------------------------------------------------
-# Stage 6: Tools (claude-code-router, playwright-mcp)
-# -----------------------------------------------------------------------------
-FROM browser AS tools
 
 # Install GitHub CLI from official binary release
 # Use HOST_ARCH build arg for architecture-specific binary selection
@@ -106,7 +61,7 @@ RUN if [ "$HOST_ARCH" = "arm64" ]; then \
     rm -rf /tmp/gh.tar.gz /tmp/gh_2.55.0_linux_${GH_ARCH}
 
 # Install claude-code-router globally
-RUN npm install -g claude-code-router
+RUN npm install -g @musistudio/claude-code-router
 
 # Install playwright and playwright MCP with bundled Chromium
 RUN npm install -g playwright \
@@ -119,7 +74,7 @@ RUN ln -sf /root/.cache/ms-playwright/chromium-*/chrome-linux/chrome /usr/bin/go
 # -----------------------------------------------------------------------------
 # Stage 7: Claude Code
 # -----------------------------------------------------------------------------
-FROM tools AS claude
+FROM base AS claude
 
 # Copy Claude Code install script
 COPY install.sh /tmp/install.sh
@@ -149,19 +104,11 @@ RUN useradd -m -s /bin/bash agentizer \
     && mkdir -p /home/agentizer/.claude/downloads \
     && chown -R agentizer:agentizer /home/agentizer
 
-# Copy SDKMAN installation from root to agentizer home
-RUN cp -r /root/.sdkman /home/agentizer/.sdkman \
-    && chown -R agentizer:agentizer /home/agentizer/.sdkman
-
 # Set working directory
 WORKDIR /workspace
 
 # Set environment for agentizer
 ENV HOME=/home/agentizer
-
-# Configure PATH and SDKMAN for agentizer user
-RUN echo 'export PATH="/usr/local/bin:$PATH"' >> /home/agentizer/.bashrc \
-    && echo 'source "$HOME/.sdkman/bin/sdkman-init.sh"' >> /home/agentizer/.bashrc
 
 # Copy entrypoint script
 COPY entrypoint.sh /usr/local/bin/entrypoint
