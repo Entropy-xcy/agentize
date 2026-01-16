@@ -13,6 +13,9 @@
   - However, it is allowed to use `cd` if you create `.sh` scripts committed to this project.
 - `README.md` in each folder shall decribe the folder purpose and organization.
   - If not, please create one!
+- Each source code file shall have a documentation with the same name but with `.md` suffix.
+  - For example, `src/module.sh` shall have `src/module.md` to describe its design rationale and usage.
+  - The documentation shall follow the `\document-guideline` skill.
 - Keep in mind, all the rules developed in this project should be as project-neutral as possible.
 - Use `.tmp` to store your temporary plans or notes.
 - Focus on the rationale of the design itself when documenting it.
