@@ -57,8 +57,8 @@ BUILD_TRIGGER_FILES = [
 # Container naming prefix
 CONTAINER_PREFIX = "agentize-sb-"
 
-# Worktree directory name
-WORKTREE_DIR = ".wt"
+# Work directory name (for shallow clones)
+WORK_DIR = ".work"
 
 # Database file name
 DB_FILE = ".sandbox_db.sqlite"
@@ -84,7 +84,7 @@ class SandboxDB:
                     name TEXT PRIMARY KEY,
                     branch TEXT NOT NULL,
                     container_id TEXT,
-                    worktree_path TEXT NOT NULL,
+                    work_dir TEXT NOT NULL,
                     ccr_mode INTEGER DEFAULT 0,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -92,13 +92,13 @@ class SandboxDB:
             """)
             conn.commit()
 
-    def create(self, name: str, branch: str, worktree_path: str, ccr_mode: bool = False) -> None:
+    def create(self, name: str, branch: str, work_dir: str, ccr_mode: bool = False) -> None:
         """Create a new sandbox record."""
         with sqlite3.connect(self.db_path) as conn:
             conn.execute(
-                """INSERT INTO sandboxes (name, branch, worktree_path, ccr_mode)
+                """INSERT INTO sandboxes (name, branch, work_dir, ccr_mode)
                    VALUES (?, ?, ?, ?)""",
-                (name, branch, worktree_path, 1 if ccr_mode else 0),
+                (name, branch, work_dir, 1 if ccr_mode else 0),
             )
             conn.commit()
 
@@ -132,6 +132,22 @@ class SandboxDB:
         with sqlite3.connect(self.db_path) as conn:
             conn.execute("DELETE FROM sandboxes WHERE name = ?", (name,))
             conn.commit()
+
+    def get_next_counter(self) -> int:
+        """Get the next available counter for auto-naming (cnt_N)."""
+        with sqlite3.connect(self.db_path) as conn:
+            cursor = conn.execute(
+                "SELECT name FROM sandboxes WHERE name LIKE 'cnt_%'"
+            )
+            max_counter = 0
+            for row in cursor.fetchall():
+                name = row[0]
+                try:
+                    counter = int(name.replace("cnt_", ""))
+                    max_counter = max(max_counter, counter)
+                except ValueError:
+                    pass
+            return max_counter + 1
 
 
 def get_container_runtime() -> str:
@@ -283,7 +299,7 @@ def ensure_image(runtime: str, context: Path) -> bool:
 
 
 # =============================================================================
-# Git Worktree Management
+# Git Repository Management
 # =============================================================================
 
 
@@ -293,31 +309,49 @@ def validate_git_repo(repo_base: Path) -> bool:
     return git_dir.exists()
 
 
-def create_worktree(repo_base: Path, name: str, branch: str) -> Path:
-    """Create a git worktree for the sandbox."""
-    wt_dir = repo_base / WORKTREE_DIR
-    wt_dir.mkdir(exist_ok=True)
+def get_remote_url(repo_base: Path) -> str:
+    """Get the remote URL of the repository."""
+    result = subprocess.run(
+        ["git", "-C", str(repo_base), "remote", "get-url", "origin"],
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    return result.stdout.strip()
 
-    worktree_path = wt_dir / name
 
-    # Create worktree
+def create_work_dir(repo_base: Path, name: str, branch: str) -> Path:
+    """Create a shallow clone of the repository for the sandbox."""
+    work_base = repo_base / WORK_DIR
+    work_base.mkdir(exist_ok=True)
+
+    work_path = work_base / name
+
+    # Get remote URL
+    remote_url = get_remote_url(repo_base)
+
+    # Shallow clone the specific branch
     subprocess.run(
-        ["git", "-C", str(repo_base), "worktree", "add", str(worktree_path), branch],
+        [
+            "git", "clone",
+            "--depth", "1",
+            "--branch", branch,
+            "--single-branch",
+            remote_url,
+            str(work_path),
+        ],
         check=True,
     )
 
-    return worktree_path
+    return work_path
 
 
-def remove_worktree(repo_base: Path, name: str) -> None:
-    """Remove a git worktree."""
-    worktree_path = repo_base / WORKTREE_DIR / name
+def remove_work_dir(repo_base: Path, name: str) -> None:
+    """Remove a work directory."""
+    work_path = repo_base / WORK_DIR / name
 
-    if worktree_path.exists():
-        subprocess.run(
-            ["git", "-C", str(repo_base), "worktree", "remove", str(worktree_path), "--force"],
-            check=True,
-        )
+    if work_path.exists():
+        shutil.rmtree(work_path)
 
 
 # =============================================================================
@@ -335,10 +369,10 @@ def get_uid_gid_args(runtime: str) -> list[str]:
     if runtime == "podman":
         return ["--userns=keep-id"]
     else:
-        # Docker
-        uid = os.getuid()
-        gid = os.getgid()
-        return ["--user", f"{uid}:{gid}"]
+        # Docker: don't use --user flag, let container run as 'agentizer' user
+        # defined in Dockerfile. Using --user would override the container's
+        # user and cause permission issues with /home/agentizer.
+        return []
 
 
 def container_exists(runtime: str, container_name: str) -> bool:
@@ -481,10 +515,17 @@ def cmd_new(args) -> int:
         print(f"Error: {repo_base} is not a git repository", file=sys.stderr)
         return 1
 
-    # Check for name conflicts
     db = SandboxDB(repo_base)
-    if db.get(args.name):
-        print(f"Error: Sandbox '{args.name}' already exists", file=sys.stderr)
+
+    # Auto-generate name if not provided
+    name = args.name
+    if not name:
+        counter = db.get_next_counter()
+        name = f"cnt_{counter}"
+
+    # Check for name conflicts
+    if db.get(name):
+        print(f"Error: Sandbox '{name}' already exists", file=sys.stderr)
         return 1
 
     # Ensure image exists
@@ -493,36 +534,36 @@ def cmd_new(args) -> int:
         print("Failed to ensure container image", file=sys.stderr)
         return 1
 
-    print(f"Creating sandbox '{args.name}' on branch '{args.branch}'...")
+    print(f"Creating sandbox '{name}' on branch '{args.branch}'...")
 
-    # Create worktree
+    # Create work directory (shallow clone)
     try:
-        worktree_path = create_worktree(repo_base, args.name, args.branch)
+        work_path = create_work_dir(repo_base, name, args.branch)
     except subprocess.CalledProcessError as e:
-        print(f"Failed to create worktree: {e}", file=sys.stderr)
+        print(f"Failed to create work directory: {e}", file=sys.stderr)
         return 1
 
     # Record in database
-    db.create(args.name, args.branch, str(worktree_path), args.ccr)
+    db.create(name, args.branch, str(work_path), args.ccr)
 
     # Create container
-    container_name = get_container_name(args.name)
+    container_name = get_container_name(name)
     try:
         container_id = create_sandbox_container(
-            runtime, container_name, worktree_path, args.ccr
+            runtime, container_name, work_path, args.ccr
         )
-        db.update_container_id(args.name, container_id)
+        db.update_container_id(name, container_id)
     except subprocess.CalledProcessError as e:
         print(f"Failed to create container: {e}", file=sys.stderr)
-        # Cleanup worktree on failure
-        remove_worktree(repo_base, args.name)
-        db.delete(args.name)
+        # Cleanup work directory on failure
+        remove_work_dir(repo_base, name)
+        db.delete(name)
         return 1
 
-    print(f"Sandbox '{args.name}' created successfully")
-    print(f"  Worktree: {worktree_path}")
+    print(f"Sandbox '{name}' created successfully")
+    print(f"  Work dir: {work_path}")
     print(f"  Container: {container_name}")
-    print(f"  Attach with: run.py --repo_base {repo_base} attach -n {args.name}")
+    print(f"  Attach with: run.py attach -n {name}")
     return 0
 
 
@@ -585,12 +626,12 @@ def cmd_rm(args) -> int:
         stop_container(runtime, container_name)
         remove_container(runtime, container_name)
 
-    # Remove worktree
+    # Remove work directory
     try:
-        remove_worktree(repo_base, args.name)
-    except subprocess.CalledProcessError as e:
+        remove_work_dir(repo_base, args.name)
+    except Exception as e:
         if not args.force:
-            print(f"Failed to remove worktree: {e}", file=sys.stderr)
+            print(f"Failed to remove work directory: {e}", file=sys.stderr)
             return 1
 
     # Remove from database
@@ -635,6 +676,62 @@ def cmd_attach(args) -> int:
     os.execvp(cmd[0], cmd)
 
 
+def cmd_reset(args) -> int:
+    """Handle 'reset' subcommand: Remove all work directories and sandbox images."""
+    repo_base = Path(args.repo_base).resolve()
+    runtime = get_container_runtime()
+
+    if not validate_git_repo(repo_base):
+        print(f"Error: {repo_base} is not a git repository", file=sys.stderr)
+        return 1
+
+    print(f"Resetting all sandbox resources for {repo_base}...")
+
+    # Get all sandboxes from database
+    db = SandboxDB(repo_base)
+    sandboxes = db.list_all()
+
+    # Stop and remove all containers
+    for sb in sandboxes:
+        container_name = get_container_name(sb["name"])
+        if container_exists(runtime, container_name):
+            print(f"  Stopping and removing container '{container_name}'...")
+            stop_container(runtime, container_name)
+            remove_container(runtime, container_name)
+
+    # Remove the entire .work directory
+    work_base = repo_base / WORK_DIR
+    if work_base.exists():
+        print(f"  Removing work directory '{work_base}'...")
+        shutil.rmtree(work_base)
+
+    # Remove database file
+    db_path = repo_base / DB_FILE
+    if db_path.exists():
+        print(f"  Removing database '{db_path}'...")
+        db_path.unlink()
+
+    # Remove sandbox image
+    if image_exists(runtime, IMAGE_NAME):
+        print(f"  Removing image '{IMAGE_NAME}'...")
+        try:
+            subprocess.run(
+                [runtime, "rmi", "-f", IMAGE_NAME],
+                check=True,
+                capture_output=True,
+            )
+        except subprocess.CalledProcessError as e:
+            print(f"  Warning: Failed to remove image: {e}", file=sys.stderr)
+
+    # Clear image hash cache
+    if CACHE_FILE.exists():
+        print(f"  Removing image cache...")
+        CACHE_FILE.unlink()
+
+    print("Reset complete.")
+    return 0
+
+
 # =============================================================================
 # Argument Parser
 # =============================================================================
@@ -648,16 +745,16 @@ def main():
     )
     parser.add_argument(
         "--repo_base",
-        required=True,
-        help="Base path of the git repository",
+        default=".",
+        help="Base path of the git repository (default: current directory)",
     )
 
     subparsers = parser.add_subparsers(dest="command", help="Available commands")
 
     # 'new' subcommand
     new_parser = subparsers.add_parser("new", help="Create new worktree + container")
-    new_parser.add_argument("-n", "--name", required=True, help="Sandbox name")
-    new_parser.add_argument("-b", "--branch", default="main", help="Branch to checkout")
+    new_parser.add_argument("-n", "--name", help="Sandbox name (default: cnt_N where N is auto-incremented)")
+    new_parser.add_argument("-b", "--branch", default="main", help="Branch to checkout (default: main)")
     new_parser.add_argument("--ccr", action="store_true", help="Run in CCR mode")
 
     # 'ls' subcommand
@@ -672,6 +769,9 @@ def main():
     attach_parser = subparsers.add_parser("attach", help="Attach to tmux session")
     attach_parser.add_argument("-n", "--name", required=True, help="Sandbox name")
 
+    # 'reset' subcommand
+    subparsers.add_parser("reset", help="Remove all work directories and sandbox images")
+
     args = parser.parse_args()
 
     if not args.command:
@@ -684,6 +784,7 @@ def main():
         "ls": cmd_ls,
         "rm": cmd_rm,
         "attach": cmd_attach,
+        "reset": cmd_reset,
     }
 
     handler = handlers.get(args.command)

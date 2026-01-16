@@ -12,44 +12,90 @@
 ARG HOST_ARCH=amd64
 
 # -----------------------------------------------------------------------------
-# Stage 1: Base
+# Stage 1: System Base
 # -----------------------------------------------------------------------------
-FROM ubuntu:24.04 AS base
+FROM ubuntu:24.04 AS system-base
 
-# Set environment variables
 ENV DEBIAN_FRONTEND=noninteractive
 ENV HOME=/root
 
-# Install base packages, Node.js 20.x LTS, and Python
+# Install essential system packages
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
     curl \
     wget \
     git \
+    sudo \
+    locales \
+    && rm -rf /var/lib/apt/lists/* \
+    && locale-gen en_US.UTF-8
+
+ENV LANG=en_US.UTF-8
+ENV LC_ALL=en_US.UTF-8
+ENV LANGUAGE=en_US:en
+
+# -----------------------------------------------------------------------------
+# Stage 2: Build Tools
+# -----------------------------------------------------------------------------
+FROM system-base AS build-tools
+
+# Install build essentials and development tools
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    libssl-dev \
+    pkg-config \
+    && rm -rf /var/lib/apt/lists/*
+
+# -----------------------------------------------------------------------------
+# Stage 3: CLI Tools
+# -----------------------------------------------------------------------------
+FROM build-tools AS cli-tools
+
+# Install CLI utilities
+RUN apt-get update && apt-get install -y --no-install-recommends \
     vim \
     unzip \
     zip \
     tar \
-    build-essential \
-    libssl-dev \
-    pkg-config \
-    sudo \
     jq \
     gnupg \
     tmux \
+    && rm -rf /var/lib/apt/lists/*
+
+# -----------------------------------------------------------------------------
+# Stage 4: Python
+# -----------------------------------------------------------------------------
+FROM cli-tools AS python-base
+
+# Install Python
+RUN apt-get update && apt-get install -y --no-install-recommends \
     python3 \
     python3-pip \
     python3-venv \
-    && curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
-    && apt-get install -y --no-install-recommends nodejs \
     && rm -rf /var/lib/apt/lists/*
 
 # Install uv package manager
 RUN curl -LsSf https://astral.sh/uv/install.sh | sh \
     && ln -sf /root/.local/bin/uv /usr/local/bin/uv
 
+# -----------------------------------------------------------------------------
+# Stage 5: Node.js
+# -----------------------------------------------------------------------------
+FROM python-base AS nodejs-base
+
+# Install Node.js 20.x LTS
+RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
+    && apt-get install -y --no-install-recommends nodejs \
+    && rm -rf /var/lib/apt/lists/*
+
+# -----------------------------------------------------------------------------
+# Stage 6: GitHub CLI
+# -----------------------------------------------------------------------------
+FROM nodejs-base AS github-cli
+
+ARG HOST_ARCH=amd64
+
 # Install GitHub CLI from official binary release
-# Use HOST_ARCH build arg for architecture-specific binary selection
 RUN if [ "$HOST_ARCH" = "arm64" ]; then \
         GH_ARCH="arm64"; \
     else \
@@ -61,21 +107,31 @@ RUN if [ "$HOST_ARCH" = "arm64" ]; then \
     mv /tmp/gh_2.55.0_linux_${GH_ARCH}/bin/ghd /usr/local/bin/ 2>/dev/null || true && \
     rm -rf /tmp/gh.tar.gz /tmp/gh_2.55.0_linux_${GH_ARCH}
 
+# -----------------------------------------------------------------------------
+# Stage 7: NPM Global Packages
+# -----------------------------------------------------------------------------
+FROM github-cli AS npm-packages
+
 # Install claude-code-router globally
 RUN npm install -g @musistudio/claude-code-router
+
+# -----------------------------------------------------------------------------
+# Stage 8: Playwright
+# -----------------------------------------------------------------------------
+FROM npm-packages AS playwright
 
 # Install playwright and playwright MCP with bundled Chromium
 RUN npm install -g playwright \
     && npx playwright install --with-deps chromium
 
-# Create symlinks for browser compatibility (playwright's bundled chromium)
+# Create symlinks for browser compatibility
 RUN ln -sf /root/.cache/ms-playwright/chromium-*/chrome-linux/chrome /usr/bin/google-chrome 2>/dev/null || true && \
     ln -sf /root/.cache/ms-playwright/chromium-*/chrome-linux/chrome /usr/bin/chromium 2>/dev/null || true
 
 # -----------------------------------------------------------------------------
-# Stage 7: Claude Code
+# Stage 9: Claude Code
 # -----------------------------------------------------------------------------
-FROM base AS claude
+FROM playwright AS claude
 
 # Copy Claude Code install script
 COPY install.sh /tmp/install.sh
@@ -83,7 +139,7 @@ COPY install.sh /tmp/install.sh
 # Create required directories
 RUN mkdir -p /root/.claude/downloads
 
-# Install Claude Code (silent mode - assumes install.sh works in container)
+# Install Claude Code
 RUN chmod +x /tmp/install.sh \
     && /tmp/install.sh stable \
     && rm -f /tmp/install.sh \
@@ -91,9 +147,9 @@ RUN chmod +x /tmp/install.sh \
     && cp /root/.local/bin/claude /usr/local/bin/claude && chmod +x /usr/local/bin/claude
 
 # -----------------------------------------------------------------------------
-# Stage 8: Final
+# Stage 10: User Setup
 # -----------------------------------------------------------------------------
-FROM claude AS final
+FROM claude AS user-setup
 
 # Create sudoers.d directory for non-root sudo access
 RUN mkdir -p /etc/sudoers.d \
@@ -104,6 +160,11 @@ RUN mkdir -p /etc/sudoers.d \
 RUN useradd -m -s /bin/bash agentizer \
     && mkdir -p /home/agentizer/.claude/downloads \
     && chown -R agentizer:agentizer /home/agentizer
+
+# -----------------------------------------------------------------------------
+# Stage 11: Final
+# -----------------------------------------------------------------------------
+FROM user-setup AS final
 
 # Set working directory
 WORKDIR /workspace
@@ -117,6 +178,9 @@ RUN chmod +x /usr/local/bin/entrypoint
 
 # Switch to non-root user
 USER agentizer
+
+# run install plugin for claude
+RUN claude mcp add -s user playwright npx @playwright/mcp@latest --headless 
 
 # Default command
 ENTRYPOINT ["/usr/local/bin/entrypoint"]
