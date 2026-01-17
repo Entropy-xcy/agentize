@@ -1,5 +1,5 @@
 # Default target
-.PHONY: test test-shells test-sdk test-cli test-lint test-e2e test-fast help setup pre-commit
+.PHONY: test test-shells test-sdk test-cli test-lint test-e2e test-fast help setup pre-commit sandbox-build sandbox-run
 
 test:
 	./tests/test-all.sh
@@ -26,7 +26,15 @@ pre-commit:
 	HOOKS_DIR=$$(git rev-parse --git-path hooks 2>/dev/null || echo ".git/hooks"); \
 	mkdir -p "$$HOOKS_DIR"; \
 	ln -sf ../../scripts/pre-commit "$$HOOKS_DIR/pre-commit"; \
-	echo "✓ Pre-commit hook installed"; \
+	echo "✓ Pre-commit hook installed";
+
+# Build sandbox image (uses local config or auto-detection)
+sandbox-build:
+	uv run ./sandbox/run.py --build
+
+# Run sandbox with passthrough (auto-builds if needed)
+sandbox-run:
+	uv run ./sandbox/run.py $(filter-out $@,$(MAKECMDGOALS))
 
 setup:
 	@echo "Generating local setup script..."
@@ -71,6 +79,12 @@ help:
 	@echo "  make test-e2e            - Run end-to-end integration tests"
 	@echo "  make test-fast           - Run fast tests (sdk + cli + lint)"
 	@echo "  make setup               - Generate local setup.sh for development"
+	@echo "  make sandbox-build       - Build/rebuild the agentize-sandbox image"
+	@echo "  make sandbox-run         - Run sandbox with volume passthrough (auto-builds if needed)"
+	@echo ""
+	@echo "Runtime selection (via config file or environment):"
+	@echo "  1. Create sandbox/agentize.toml with: [container] runtime = 'podman'"
+	@echo "  2. Or set CONTAINER_RUNTIME=podman"
 	@echo ""
 	@echo "SDK usage:"
 	@echo "  lol upgrade               # Upgrade agentize installation"
