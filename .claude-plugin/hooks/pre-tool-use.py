@@ -25,10 +25,16 @@ def main():
             sys.path.insert(0, str(repo_root / "python"))
         from agentize.permission import determine
         result = determine(sys.stdin.read())
-    except Exception:
+    except Exception as e:
+        os.mkdir('.tmp', exist_ok=True)
+        with open('.tmp/pre_tool_use_hook_error.log', 'w') as f:
+            f.write("Error in PreToolUse hook:\n")
+            import traceback
+            traceback.print_exc(file=f)
+            f.write(str(e))
         result = {"hookSpecificOutput": {"hookEventName": "PreToolUse", "permissionDecision": "ask"}}
     print(json.dumps(result))
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":o
     main()
