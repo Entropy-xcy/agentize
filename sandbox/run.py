@@ -84,21 +84,45 @@ class SandboxDB:
                     name TEXT PRIMARY KEY,
                     branch TEXT NOT NULL,
                     container_id TEXT,
+                    slurm_job_id TEXT,
                     work_dir TEXT NOT NULL,
                     ccr_mode INTEGER DEFAULT 0,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
             """)
+            # Add slurm_job_id column migration for existing databases
+            try:
+                conn.execute("ALTER TABLE sandboxes ADD COLUMN slurm_job_id TEXT")
+            except sqlite3.OperationalError:
+                # Column already exists
+                pass
             conn.commit()
 
-    def create(self, name: str, branch: str, work_dir: str, ccr_mode: bool = False) -> None:
+    def create(
+        self,
+        name: str,
+        branch: str,
+        work_dir: str,
+        ccr_mode: bool = False,
+        slurm_job_id: Optional[str] = None,
+    ) -> None:
         """Create a new sandbox record."""
         with sqlite3.connect(self.db_path) as conn:
             conn.execute(
-                """INSERT INTO sandboxes (name, branch, work_dir, ccr_mode)
-                   VALUES (?, ?, ?, ?)""",
-                (name, branch, work_dir, 1 if ccr_mode else 0),
+                """INSERT INTO sandboxes (name, branch, container_id, slurm_job_id, work_dir, ccr_mode)
+                   VALUES (?, ?, ?, ?, ?, ?)""",
+                (name, branch, None, slurm_job_id, work_dir, 1 if ccr_mode else 0),
+            )
+            conn.commit()
+
+    def update_slurm_job_id(self, name: str, slurm_job_id: str) -> None:
+        """Update Slurm job ID for a sandbox."""
+        with sqlite3.connect(self.db_path) as conn:
+            conn.execute(
+                """UPDATE sandboxes SET slurm_job_id = ?, updated_at = ?
+                   WHERE name = ?""",
+                (slurm_job_id, datetime.now().isoformat(), name),
             )
             conn.commit()
 
@@ -136,9 +160,7 @@ class SandboxDB:
     def get_next_counter(self) -> int:
         """Get the next available counter for auto-naming (cnt_N)."""
         with sqlite3.connect(self.db_path) as conn:
-            cursor = conn.execute(
-                "SELECT name FROM sandboxes WHERE name LIKE 'cnt_%'"
-            )
+            cursor = conn.execute("SELECT name FROM sandboxes WHERE name LIKE 'cnt_%'")
             max_counter = 0
             for row in cursor.fetchall():
                 name = row[0]
@@ -333,9 +355,12 @@ def create_work_dir(repo_base: Path, name: str, branch: str) -> Path:
     # Shallow clone the specific branch
     subprocess.run(
         [
-            "git", "clone",
-            "--depth", "1",
-            "--branch", branch,
+            "git",
+            "clone",
+            "--depth",
+            "1",
+            "--branch",
+            branch,
             "--single-branch",
             remote_url,
             str(work_path),
@@ -386,7 +411,14 @@ def container_running(runtime: str, container_name: str) -> bool:
     """Check if a container is running."""
     try:
         result = subprocess.run(
-            [runtime, "container", "inspect", "-f", "{{.State.Running}}", container_name],
+            [
+                runtime,
+                "container",
+                "inspect",
+                "-f",
+                "{{.State.Running}}",
+                container_name,
+            ],
             capture_output=True,
             text=True,
         )
@@ -407,7 +439,9 @@ def start_container(runtime: str, container_name: str) -> bool:
 def stop_container(runtime: str, container_name: str) -> bool:
     """Stop a running container."""
     try:
-        subprocess.run([runtime, "stop", container_name], check=True, capture_output=True)
+        subprocess.run(
+            [runtime, "stop", container_name], check=True, capture_output=True
+        )
         return True
     except subprocess.CalledProcessError:
         return False
@@ -416,35 +450,33 @@ def stop_container(runtime: str, container_name: str) -> bool:
 def remove_container(runtime: str, container_name: str) -> bool:
     """Remove a container."""
     try:
-        subprocess.run([runtime, "rm", "-f", container_name], check=True, capture_output=True)
+        subprocess.run(
+            [runtime, "rm", "-f", container_name], check=True, capture_output=True
+        )
         return True
     except subprocess.CalledProcessError:
         return False
 
 
-def create_sandbox_container(
-    runtime: str,
-    container_name: str,
-    worktree_path: Path,
-    ccr_mode: bool,
-) -> str:
-    """Create and start a persistent sandbox container with tmux."""
-    cmd = [runtime, "run", "-d"]  # Detached mode, no --rm
+def get_container_volume_args(home: Path, worktree_path: Path) -> list[str]:
+    """Get common volume mount arguments for podman container.
 
-    # Interactive mode for tmux
-    cmd.extend(["-it"])
-
-    # Container name
-    cmd.extend(["--name", container_name])
-
-    # Volume mounts
-    home = Path.home()
+    Returns a list of -v arguments for volume mounts.
+    """
+    cmd = []
 
     # CCR config
     ccr_config = home / ".claude-code-router" / "config.json"
     if ccr_config.exists():
-        cmd.extend(["-v", f"{ccr_config}:/home/agentizer/.claude-code-router/config.json:ro"])
-        cmd.extend(["-v", f"{ccr_config}:/home/agentizer/.claude-code-router/config-router.json:ro"])
+        cmd.extend(
+            ["-v", f"{ccr_config}:/home/agentizer/.claude-code-router/config.json:ro"]
+        )
+        cmd.extend(
+            [
+                "-v",
+                f"{ccr_config}:/home/agentizer/.claude-code-router/config-router.json:ro",
+            ]
+        )
 
     # GitHub CLI credentials
     gh_config_yml = home / ".config" / "gh" / "config.yml"
@@ -467,7 +499,16 @@ def create_sandbox_container(
     # Worktree directory
     cmd.extend(["-v", f"{worktree_path}:/workspace"])
 
-    # Environment variables
+    return cmd
+
+
+def get_container_env_args(ccr_mode: bool) -> list[str]:
+    """Get common environment variable arguments for podman container.
+
+    Returns a list of -e arguments for environment variables.
+    """
+    cmd = []
+
     if "GITHUB_TOKEN" in os.environ:
         cmd.extend(["-e", f"GITHUB_TOKEN={os.environ['GITHUB_TOKEN']}"])
 
@@ -476,6 +517,31 @@ def create_sandbox_container(
             cmd.extend(["-e", f"ANTHROPIC_API_KEY={os.environ['ANTHROPIC_API_KEY']}"])
         if "ANTHROPIC_BASE_URL" in os.environ:
             cmd.extend(["-e", f"ANTHROPIC_BASE_URL={os.environ['ANTHROPIC_BASE_URL']}"])
+
+    return cmd
+
+
+def create_sandbox_container(
+    runtime: str,
+    container_name: str,
+    worktree_path: Path,
+    ccr_mode: bool,
+) -> str:
+    """Create and start a persistent sandbox container with tmux."""
+    cmd = [runtime, "run", "-d"]  # Detached mode, no --rm
+
+    # Interactive mode for tmux
+    cmd.extend(["-it"])
+
+    # Container name
+    cmd.extend(["--name", container_name])
+
+    # Volume mounts
+    home = Path.home()
+    cmd.extend(get_container_volume_args(home, worktree_path))
+
+    # Environment variables
+    cmd.extend(get_container_env_args(ccr_mode))
 
     # Working directory
     cmd.extend(["-w", "/workspace"])
@@ -493,6 +559,151 @@ def create_sandbox_container(
 
 
 # =============================================================================
+# Slurm Container Management
+# =============================================================================
+
+
+def find_podman_srun() -> Optional[Path]:
+    """Find the podman-srun wrapper script.
+
+    Searches in order:
+    1. Current directory (./podman-srun)
+    2. Sandbox directory (./sandbox/podman-srun)
+    3. PATH environment variable
+    """
+    # Check current directory
+    script_dir = Path(__file__).parent.resolve()
+    podman_srun_paths = [
+        Path.cwd() / "podman-srun",
+        script_dir / "podman-srun",
+    ]
+    for path in podman_srun_paths:
+        if path.exists() and path.is_file():
+            return path
+    # Check PATH
+    which_path = shutil.which("podman-srun")
+    if which_path:
+        return Path(which_path)
+    return None
+
+
+def get_tmux_session_name(name: str) -> str:
+    """Get tmux session name for a sandbox."""
+    return f"agentize-sb-{name}"
+
+
+def create_slurm_container(
+    worktree_path: Path,
+    ccr_mode: bool,
+) -> str:
+    """Create and start a sandbox container on Slurm via srun + podman-srun.
+
+    Returns the Slurm job ID.
+    """
+    # Verify required Slurm tools are available
+    require_slurm_tools()
+
+    podman_srun_path = find_podman_srun()
+    if not podman_srun_path:
+        raise RuntimeError(
+            "podman-srun wrapper script not found. "
+            "Expected at ./podman-srun, ./sandbox/podman-srun, or in PATH."
+        )
+
+    # Build the podman run command using shared helpers
+    cmd = ["podman", "run", "-it"]
+
+    # Volume mounts using shared helper
+    home = Path.home()
+    cmd.extend(get_container_volume_args(home, worktree_path))
+
+    # Environment variables using shared helper
+    cmd.extend(get_container_env_args(ccr_mode))
+
+    # Working directory
+    cmd.extend(["-w", "/workspace"])
+
+    # Image and entrypoint with tmux
+    cmd.extend(["--entrypoint", "/usr/local/bin/entrypoint"])
+    cmd.append(IMAGE_NAME)
+    cmd.append("--tmux")
+    if ccr_mode:
+        cmd.append("--ccr")
+
+    # Build the command to run via srun
+    # The podman-srun wrapper handles node-specific storage
+    podman_cmd_str = " ".join(shlex.quote(arg) for arg in cmd)
+
+    # Run via srun with podman-srun wrapper
+    # srun will submit the job and capture the job ID
+    srun_cmd = [
+        "srun",
+        "--no-container-remap",
+        "--job-name=agentize-sandbox",
+        f"--wrap={podman_srun_path} {podman_cmd_str}",
+    ]
+
+    result = subprocess.run(srun_cmd, capture_output=True, text=True, check=True)
+
+    # Extract job ID from srun output
+    # srun outputs job ID in formats like:
+    # - "Submitted batch job 12345"
+    # - "12345"
+    output = result.stdout.strip()
+    job_id = None
+    for line in output.split("\n"):
+        line = line.strip()
+        if "Submitted batch job" in line:
+            parts = line.split()
+            candidate = parts[-1]
+            if candidate.isdigit():
+                job_id = candidate
+                break
+        elif line.isdigit():
+            # Fallback: line is just the job ID
+            job_id = line
+            break
+
+    if not job_id:
+        raise RuntimeError(
+            f"Could not extract valid job ID from srun output:\n{output}\n"
+            "Ensure Slurm is configured to output job ID."
+        )
+
+    return job_id
+
+
+def require_slurm_tools() -> None:
+    """Verify that required Slurm tools are available in PATH.
+
+    Raises RuntimeError if any required tool is missing.
+    """
+    missing = []
+    for tool in ["srun", "sattach", "scancel"]:
+        if not shutil.which(tool):
+            missing.append(tool)
+    if missing:
+        raise RuntimeError(
+            f"Required Slurm tool(s) not found in PATH: {', '.join(missing)}. "
+            "Please ensure Slurm is properly installed and configured."
+        )
+
+
+def cancel_slurm_job(job_id: str) -> bool:
+    """Cancel a Slurm job using scancel."""
+    try:
+        result = subprocess.run(
+            ["scancel", job_id], check=True, capture_output=True, text=True
+        )
+        return True
+    except subprocess.CalledProcessError as e:
+        print(
+            f"Warning: Failed to cancel Slurm job {job_id}: {e.stderr}", file=sys.stderr
+        )
+        return False
+
+
+# =============================================================================
 # Subcommand Handlers
 # =============================================================================
 
@@ -501,6 +712,7 @@ def cmd_new(args) -> int:
     """Handle 'new' subcommand: Create new worktree + container."""
     repo_base = Path(args.repo_base).resolve()
     runtime = get_container_runtime()
+    slurm_mode = getattr(args, "slurm", False)
 
     # Validate git repo
     if not validate_git_repo(repo_base):
@@ -520,13 +732,14 @@ def cmd_new(args) -> int:
         print(f"Error: Sandbox '{name}' already exists", file=sys.stderr)
         return 1
 
-    # Ensure image exists
+    # Ensure image exists (required for both local and slurm modes)
     script_dir = Path(__file__).parent.resolve()
-    if not ensure_image(runtime, script_dir):
+    if not ensure_image("podman", script_dir):
         print("Failed to ensure container image", file=sys.stderr)
         return 1
 
-    print(f"Creating sandbox '{name}' on branch '{args.branch}'...")
+    mode_str = "Slurm" if slurm_mode else "local"
+    print(f"Creating sandbox '{name}' on branch '{args.branch}' ({mode_str} mode)...")
 
     # Create work directory (shallow clone)
     try:
@@ -535,16 +748,29 @@ def cmd_new(args) -> int:
         print(f"Failed to create work directory: {e}", file=sys.stderr)
         return 1
 
-    # Record in database
-    db.create(name, args.branch, str(work_path), args.ccr)
+    # Record in database (will be updated with slurm_job_id or container_id later)
+    db.create(name, args.branch, str(work_path), args.ccr, slurm_job_id=None)
 
-    # Create container
-    container_name = get_container_name(name)
     try:
-        container_id = create_sandbox_container(
-            runtime, container_name, work_path, args.ccr
-        )
-        db.update_container_id(name, container_id)
+        if slurm_mode:
+            # Create container via Slurm srun
+            job_id = create_slurm_container(work_path, args.ccr)
+            db.update_slurm_job_id(name, job_id)
+            print(f"Sandbox '{name}' created successfully")
+            print(f"  Work dir: {work_path}")
+            print(f"  Slurm job ID: {job_id}")
+            print(f"  Attach with: run.py attach -n {name}")
+        else:
+            # Create local container
+            container_name = get_container_name(name)
+            container_id = create_sandbox_container(
+                runtime, container_name, work_path, args.ccr
+            )
+            db.update_container_id(name, container_id)
+            print(f"Sandbox '{name}' created successfully")
+            print(f"  Work dir: {work_path}")
+            print(f"  Container: {container_name}")
+            print(f"  Attach with: run.py attach -n {name}")
     except subprocess.CalledProcessError as e:
         print(f"Failed to create container: {e}", file=sys.stderr)
         # Cleanup work directory on failure
@@ -552,10 +778,6 @@ def cmd_new(args) -> int:
         db.delete(name)
         return 1
 
-    print(f"Sandbox '{name}' created successfully")
-    print(f"  Work dir: {work_path}")
-    print(f"  Container: {container_name}")
-    print(f"  Attach with: run.py attach -n {name}")
     return 0
 
 
@@ -576,20 +798,33 @@ def cmd_ls(args) -> int:
         return 0
 
     # Print header
-    print(f"{'NAME':<15} {'BRANCH':<20} {'CONTAINER':<12} {'STATUS':<10} {'CREATED'}")
+    print(
+        f"{'NAME':<15} {'BRANCH':<20} {'CONTAINER/JOB':<15} {'STATUS':<10} {'CREATED'}"
+    )
     print("-" * 80)
 
     for sb in sandboxes:
+        slurm_job_id = sb.get("slurm_job_id")
         container_name = get_container_name(sb["name"])
-        if container_running(runtime, container_name):
+
+        if slurm_job_id:
+            # Slurm mode
+            container_or_job = f"slurm:{slurm_job_id}"
+            status = "slurm"
+        elif container_running(runtime, container_name):
+            container_or_job = container_name
             status = "running"
         elif container_exists(runtime, container_name):
+            container_or_job = container_name
             status = "stopped"
         else:
+            container_or_job = "N/A"
             status = "no container"
 
         created = sb["created_at"][:16] if sb["created_at"] else "unknown"
-        print(f"{sb['name']:<15} {sb['branch']:<20} {container_name:<12} {status:<10} {created}")
+        print(
+            f"{sb['name']:<15} {sb['branch']:<20} {container_or_job:<15} {status:<10} {created}"
+        )
 
     return 0
 
@@ -610,13 +845,21 @@ def cmd_rm(args) -> int:
         print(f"Error: Sandbox '{args.name}' not found", file=sys.stderr)
         return 1
 
+    slurm_job_id = sandbox.get("slurm_job_id")
     container_name = get_container_name(args.name)
     print(f"Removing sandbox '{args.name}'...")
 
-    # Stop and remove container
-    if container_exists(runtime, container_name):
-        stop_container(runtime, container_name)
-        remove_container(runtime, container_name)
+    if slurm_job_id:
+        # Slurm mode: cancel the job and clean up local worktree
+        print(f"  Cancelling Slurm job {slurm_job_id}...")
+        if not cancel_slurm_job(slurm_job_id):
+            print(f"  Warning: Failed to cancel Slurm job (may already be complete)")
+    else:
+        # Local mode: stop and remove container
+        if container_exists(runtime, container_name):
+            print(f"  Stopping and removing container '{container_name}'...")
+            stop_container(runtime, container_name)
+            remove_container(runtime, container_name)
 
     # Remove work directory
     try:
@@ -648,30 +891,59 @@ def cmd_attach(args) -> int:
         print(f"Error: Sandbox '{args.name}' not found", file=sys.stderr)
         return 1
 
-    container_name = get_container_name(args.name)
+    slurm_job_id = sandbox.get("slurm_job_id")
+    container_id = sandbox.get("container_id")
 
-    # Check container state
-    if not container_exists(runtime, container_name):
-        print(f"Error: Container '{container_name}' does not exist", file=sys.stderr)
-        return 1
+    if slurm_job_id:
+        # Slurm mode: use sattach to connect to tmux session
+        # Format: sattach -m <job_id>.<step_id>:<session_name>
+        # step_id 0 is the main step (the srun job itself)
+        session_name = get_tmux_session_name(args.name)
+        sattach_cmd = [
+            "sattach",
+            "-m",
+            f"{slurm_job_id}.0:{session_name}",
+        ]
+        print(f"Attaching to Slurm sandbox '{args.name}' (job {slurm_job_id})...")
+        os.execvp(sattach_cmd[0], sattach_cmd)
+    else:
+        # Local mode: use podman/docker exec
+        container_name = get_container_name(args.name)
 
-    # Start container if stopped
-    if not container_running(runtime, container_name):
-        print(f"Starting container '{container_name}'...")
-        if not start_container(runtime, container_name):
-            print(f"Failed to start container", file=sys.stderr)
+        # Check container state
+        if not container_exists(runtime, container_name):
+            print(
+                f"Error: Container '{container_name}' does not exist", file=sys.stderr
+            )
             return 1
 
-    # Attach to tmux session using the fixed socket path
-    # Use -u 0 (root) because podman rootless maps container UID to different host UID,
-    # causing socket permission issues when accessing from exec
-    socket_path = "/tmp/tmux-main"
-    cmd = [
-        runtime, "exec", "-it", "-u", "0",
-        container_name, "tmux", "-S", socket_path, "attach", "-t", "main"
-    ]
-    print(f"Attaching to sandbox '{args.name}'...")
-    os.execvp(cmd[0], cmd)
+        # Start container if stopped
+        if not container_running(runtime, container_name):
+            print(f"Starting container '{container_name}'...")
+            if not start_container(runtime, container_name):
+                print(f"Failed to start container", file=sys.stderr)
+                return 1
+
+        # Attach to tmux session using the fixed socket path
+        # Use -u 0 (root) because podman rootless maps container UID to different host UID,
+        # causing socket permission issues when accessing from exec
+        socket_path = "/tmp/tmux-main"
+        cmd = [
+            runtime,
+            "exec",
+            "-it",
+            "-u",
+            "0",
+            container_name,
+            "tmux",
+            "-S",
+            socket_path,
+            "attach",
+            "-t",
+            "main",
+        ]
+        print(f"Attaching to sandbox '{args.name}'...")
+        os.execvp(cmd[0], cmd)
 
 
 def cmd_reset(args) -> int:
@@ -689,13 +961,25 @@ def cmd_reset(args) -> int:
     db = SandboxDB(repo_base)
     sandboxes = db.list_all()
 
-    # Stop and remove all containers
+    # Stop and remove local containers only (skip Slurm sandboxes)
+    slurm_job_count = 0
     for sb in sandboxes:
+        if sb.get("slurm_job_id"):
+            slurm_job_count += 1
+            continue
         container_name = get_container_name(sb["name"])
         if container_exists(runtime, container_name):
             print(f"  Stopping and removing container '{container_name}'...")
             stop_container(runtime, container_name)
             remove_container(runtime, container_name)
+
+    # Warn about Slurm jobs if any exist
+    if slurm_job_count > 0:
+        print(
+            f"  Warning: {slurm_job_count} Slurm sandbox(es) not cancelled. "
+            "Use 'rm' command to remove Slurm sandboxes.",
+            file=sys.stderr,
+        )
 
     # Remove the entire .work directory
     work_base = repo_base / WORK_DIR
@@ -751,9 +1035,19 @@ def main():
 
     # 'new' subcommand
     new_parser = subparsers.add_parser("new", help="Create new worktree + container")
-    new_parser.add_argument("-n", "--name", help="Sandbox name (default: cnt_N where N is auto-incremented)")
-    new_parser.add_argument("-b", "--branch", default="main", help="Branch to checkout (default: main)")
+    new_parser.add_argument(
+        "-n", "--name", help="Sandbox name (default: cnt_N where N is auto-incremented)"
+    )
+    new_parser.add_argument(
+        "-b", "--branch", default="main", help="Branch to checkout (default: main)"
+    )
     new_parser.add_argument("--ccr", action="store_true", help="Run in CCR mode")
+    new_parser.add_argument(
+        "-s",
+        "--slurm",
+        action="store_true",
+        help="Run container on Slurm compute nodes via srun",
+    )
 
     # 'ls' subcommand
     subparsers.add_parser("ls", help="List all sandboxes")
@@ -768,7 +1062,9 @@ def main():
     attach_parser.add_argument("-n", "--name", required=True, help="Sandbox name")
 
     # 'reset' subcommand
-    subparsers.add_parser("reset", help="Remove all work directories and sandbox images")
+    subparsers.add_parser(
+        "reset", help="Remove all work directories and sandbox images"
+    )
 
     args = parser.parse_args()
 
