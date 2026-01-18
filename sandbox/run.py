@@ -636,12 +636,8 @@ def create_slurm_container(
 
     # Run via srun with podman-srun wrapper
     # srun will submit the job and capture the job ID
-    srun_cmd = [
-        "srun",
-        "--no-container-remap",
-        "--job-name=agentize-sandbox",
-        f"--wrap={podman_srun_path} {podman_cmd_str}",
-    ]
+    # Use direct script invocation: srun ./podman-srun run hello-world
+    srun_cmd = ["srun", "--job-name=agentize-sandbox", podman_srun_path] + cmd
 
     result = subprocess.run(srun_cmd, capture_output=True, text=True, check=True)
 

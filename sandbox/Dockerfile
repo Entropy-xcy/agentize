@@ -176,7 +176,7 @@ RUN chmod 755 /usr/local/bin/entrypoint
 # Install claude plugin as agentizer user during build
 USER agentizer
 ENV HOME=/home/agentizer
-RUN claude mcp add -s user playwright npx @playwright/mcp@latest --headless
+RUN claude mcp add -s user playwright npx @playwright/mcp@latest
 
 # Stay as agentizer user for runtime
 # Default command
